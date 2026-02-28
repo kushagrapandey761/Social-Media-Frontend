@@ -1,0 +1,122 @@
+.post-form-container {
+  padding: var(--space-md);
+  margin-bottom: var(--space-xl);
+  transition: all var(--transition-normal);
+}
+
+.post-form-container:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.post-form-header {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+.avatar-placeholder {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  box-shadow: var(--shadow-sm);
+}
+
+.input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.post-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  resize: none;
+  min-height: 44px;
+  padding: 10px 0;
+  overflow: hidden;
+  transition: min-height var(--transition-normal);
+}
+
+.post-input.expanded {
+  min-height: 100px;
+}
+
+.post-input:focus {
+  outline: none;
+}
+
+.post-input::placeholder {
+  color: var(--text-muted);
+}
+
+.post-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-color);
+  margin-left: calc(44px + var(--space-md));
+}
+
+.post-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--primary-color);
+}
+
+.post-submit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.char-count {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.char-count.over-limit {
+  color: var(--error);
+}
+
+.post-btn {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.post-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-surface-hover);
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.post-btn:disabled:hover {
+  transform: translateY(0);
+  box-shadow: none;
+}

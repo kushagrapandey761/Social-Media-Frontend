@@ -1,0 +1,129 @@
+.feed-container {
+  display: flex;
+  gap: var(--space-xl);
+  align-items: flex-start;
+}
+
+.feed-main {
+  flex: 1;
+  max-width: 680px;
+}
+
+.feed-sidebar {
+  width: 320px;
+  position: sticky;
+  top: calc(80px + var(--space-xl)); /* Navbar height + spacing */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.sidebar-widget {
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+}
+
+.sidebar-widget h3 {
+  font-size: 1.1rem;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.trending-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.trending-list li {
+  color: var(--primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.trending-list li:hover {
+  color: var(--primary-hover);
+  padding-left: 4px;
+}
+
+.suggested-users {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.suggested-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.suggested-avatar {
+  min-width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.suggested-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.suggested-info .name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.suggested-info .handle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.follow-btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.feed-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl) 0;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--space-sm);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+  .feed-sidebar {
+    display: none;
+  }
+  
+  .feed-main {
+    max-width: 100%;
+  }
+}
