@@ -4,6 +4,7 @@ import './Login.css';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState({email: '', password: ''});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -11,16 +12,47 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
+    // Validate form data
+    const newError = { email: '', password: '' };
+
+    if (!formData.email) {
+      newError.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newError.email = 'Enter a valid email address';
+    }
+
+    if (!formData.password) {
+      newError.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newError.password = 'Password must be at least 6 characters';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(formData.password)) {
+      newError.password = 'Password must include lowercase, uppercase, number, and special character';
+    }
+
+    setError(newError);
+
+    // Stop submission if validation failed
+    if (newError.email || newError.password) return;
+
     setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      // On success, redirect to feed
-      navigate('/');
-    }, 1500);
+
+    try {
+      console.log("Submitting login with:", process.env.REACT_APP_BASE_URL);
+      await fetch(`${process.env.REACT_APP_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      .then(res => res.json())
+    }catch (err) {
+      console.error('Login error:', err);
+      setError({ ...error, general: 'An error occurred. Please try again.' });
+    }
+    setLoading(false);
+    localStorage.setItem('isLoggedIn', 'true'); // Set auth state in localStorage
+    window.location.reload()
   };
 
   return (
@@ -35,14 +67,13 @@ const Login = () => {
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input 
-              type="email" 
               id="email" 
               name="email"
               value={formData.email} 
               onChange={handleChange} 
               placeholder="you@example.com"
-              required 
             />
+            {error.email && <span className="error-message">{error.email}</span>}
           </div>
           
           <div className="form-group">
@@ -54,8 +85,8 @@ const Login = () => {
               value={formData.password} 
               onChange={handleChange} 
               placeholder="••••••••"
-              required 
             />
+            {error.password && <span className="error-message">{error.password}</span>}
           </div>
           
           <div className="form-options">
