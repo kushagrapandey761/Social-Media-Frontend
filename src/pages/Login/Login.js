@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import './Login.css';
+import { api } from '../../services/api';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -39,20 +40,14 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log("Submitting login with:", process.env.REACT_APP_BASE_URL);
-      await fetch(`${process.env.REACT_APP_BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
-      .then(res => res.json())
-    }catch (err) {
+      await api.login(formData);
+      localStorage.setItem('isLoggedIn', 'true'); // Set auth state in localStorage
+      window.location.href = "/";
+    } catch (err) {
       console.error('Login error:', err);
-      setError({ ...error, general: 'An error occurred. Please try again.' });
+      setError({ ...error, general: err.message || 'An error occurred. Please try again.' });
+      setLoading(false);
     }
-    setLoading(false);
-    localStorage.setItem('isLoggedIn', 'true'); // Set auth state in localStorage
-    window.location.reload()
   };
 
   return (

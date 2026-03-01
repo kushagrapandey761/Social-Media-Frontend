@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 // Reuse auth styles
-import '../Login/Login.css';
+import './Register.css';
+import { api } from '../../services/api';
+
 
 const Register = () => {
   const [formData, setFormData] = useState({ 
@@ -12,25 +14,74 @@ const Register = () => {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [error, setError] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match");
+    
+    // Validate form data
+    const newError = {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    };
+
+    if (!formData.username) {
+      newError.username = "Username is required";
+    }
+
+    if (!formData.email) {
+      newError.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newError.email = "Enter a valid email address";
+    }
+
+    if (!formData.password) {
+      newError.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newError.password = "Password must be at least 6 characters";
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(formData.password)) {
+      newError.password = "Password must include lowercase, uppercase, number, and special character";
+    }
+
+    if (!formData.confirmPassword) {
+      newError.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newError.confirmPassword = "Passwords don't match";
+    }
+
+    setError(newError);
+
+    // Stop submission if validation failed
+    if (newError.username || newError.email || newError.password || newError.confirmPassword) {
       return;
     }
+
     setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+     await api.register(formData);
       // On success, redirect to feed
-      navigate('/');
-    }, 1500);
+      navigate('/login');
+    } catch (err) {
+      console.error('Registration error:', err);
+      if (err.message === 'Email already in use') {
+        setError({ ...error, email: 'Email is already registered' });
+      } else {
+        setError({ ...error, general: err.message || 'An error occurred. Please try again.' });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,21 +102,20 @@ const Register = () => {
               value={formData.username} 
               onChange={handleChange} 
               placeholder="Your username"
-              required 
             />
+            {error.username && <span className="error-text">{error.username}</span>}
           </div>
 
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input 
-              type="email" 
               id="email" 
               name="email"
               value={formData.email} 
               onChange={handleChange} 
               placeholder="you@example.com"
-              required 
             />
+            {error.email && <span className="error-text">{error.email}</span>}
           </div>
           
           <div className="form-group">
@@ -77,8 +127,8 @@ const Register = () => {
               value={formData.password} 
               onChange={handleChange} 
               placeholder="••••••••"
-              required 
             />
+            {error.password && <span className="error-text">{error.password}</span>}
           </div>
 
           <div className="form-group">
@@ -90,8 +140,8 @@ const Register = () => {
               value={formData.confirmPassword} 
               onChange={handleChange} 
               placeholder="••••••••"
-              required 
             />
+            {error.confirmPassword && <span className="error-text">{error.confirmPassword}</span>}
           </div>
           
           <button 

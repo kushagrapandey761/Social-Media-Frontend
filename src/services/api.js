@@ -11,27 +11,24 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 export const api = {
   // Authentication
   login: async (credentials) => {
-    await delay(1000);
-    console.log('API: Login with', credentials);
-    if (!credentials.email || !credentials.password) {
-      throw new Error('Email and password required');
-    }
-    return {
-      token: 'mock-jwt-token-12345',
-      user: { id: 'me', username: 'Current User', email: credentials.email }
-    };
+    await fetch(`${process.env.REACT_APP_BASE_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    }).then((res) => res.json());
   },
   
   register: async (userData) => {
-    await delay(1000);
-    console.log('API: Register with', userData);
-    if (!userData.username || !userData.email) {
-      throw new Error('All fields required');
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Registration failed');
     }
-    return {
-      token: 'mock-jwt-token-67890',
-      user: { id: 'me', username: userData.username, email: userData.email }
-    };
+    return data;
   },
   
   // Posts
