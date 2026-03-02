@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import './PostCard.css';
+import { api } from '../../services/api';
 
 const PostCard = ({ post }) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
   const handleLike = () => {
     if (liked) {
@@ -22,15 +24,26 @@ const PostCard = ({ post }) => {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
+  const hasMedia = post.media && post.media.length > 0;
+  const isCarousel = hasMedia && post.media.length > 1;
+
+  const nextMedia = () => {
+    setCurrentMediaIndex((prev) => (prev === post.media.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevMedia = () => {
+    setCurrentMediaIndex((prev) => (prev === 0 ? post.media.length - 1 : prev - 1));
+  };
+
   return (
     <div className="post-card glass-panel animate-fade-in">
       <div className="post-header">
-        <Link to={`/profile/${post.userId}`} className="post-author-info">
+        <Link to={`/user/${post.authorId}`} className="post-author-info">
           <div className="author-avatar" style={{ backgroundImage: `url(${post.userAvatar})` }}>
-            {!post.userAvatar && (post.username || 'U').charAt(0).toUpperCase()}
+            {!post.userAvatar && (post.userName || 'U').charAt(0).toUpperCase()}
           </div>
           <div className="author-meta">
-            <h4 className="author-name">{post.username || 'Unknown User'}</h4>
+            <h4 className="author-name">{post.userName || 'Unknown User'}</h4>
             <span className="post-time">{formatDate(post.createdAt || new Date())}</span>
           </div>
         </Link>
@@ -45,9 +58,56 @@ const PostCard = ({ post }) => {
       
       <div className="post-content">
         <p>{post.content}</p>
-        {post.image && (
-          <div className="post-image-container">
-            <img src={post.image} alt="Post attachment" className="post-image" />
+        {hasMedia && (
+          <div className="carousel-container">
+            <div className="post-image-container">
+              {post.media[currentMediaIndex].type === 'image' && (
+                <img 
+                  src={post.media[currentMediaIndex].url} 
+                  alt={`Post media ${currentMediaIndex + 1}`} 
+                  className="post-image" 
+                />
+              )}
+              {post.media[currentMediaIndex].type === 'video' && (
+                <video controls className="post-video">
+                  <source src={post.media[currentMediaIndex].url} type="video/mp4" />
+                </video>
+              )}
+            </div>
+            
+            {isCarousel && (
+              <>
+                <button 
+                  className="carousel-btn prev-btn" 
+                  onClick={prevMedia}
+                  aria-label="Previous media"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <button 
+                  className="carousel-btn next-btn" 
+                  onClick={nextMedia}
+                  aria-label="Next media"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+                
+                <div className="carousel-indicators">
+                  {post.media.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`carousel-dot ${index === currentMediaIndex ? 'active' : ''}`}
+                      onClick={() => setCurrentMediaIndex(index)}
+                      aria-label={`Go to media ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

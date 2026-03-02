@@ -15,6 +15,7 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
+      credentials: "include"
     }).then((res) => res.json());
   },
   
@@ -33,30 +34,14 @@ export const api = {
   
   // Posts
   getFeed: async () => {
-    await delay(800);
-    return [
-      {
-        id: 1,
-        userId: 'u1',
-        username: 'Anna Smith',
-        userAvatar: '',
-        content: 'Just launched my new portfolio! Extremely excited to share this with everyone. 🚀✨',
-        image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        likes: 42,
-        comments: 5
-      },
-      {
-        id: 2,
-        userId: 'u2',
-        username: 'Devon Miles',
-        userAvatar: '',
-        content: 'Learning React has been quite the journey. Loving the component-based architecture and exactly how easy it is to manage state with hooks.',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        likes: 128,
-        comments: 14
-      }
-    ];
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/posts`,{
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch feed');
+    }
+    return await res.json();
   },
   
   createPost: async (content, image = null) => {
@@ -90,17 +75,13 @@ export const api = {
   },
   
   getUserProfile: async (userId) => {
-    await delay(600);
-    return {
-      id: userId,
-      username: userId === 'me' ? 'Current User' : 'Other User',
-      handle: userId === 'me' ? '@currentuser' : `@${userId}`,
-      bio: 'Frontend Developer | React Enthusiast',
-      followers: 1205,
-      following: 342,
-      joinDate: 'March 2026',
-      avatar: '',
-      cover: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=1200&q=80'
-    };
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/user/${userId}`,{
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch user profile');
+    }
+    return await res.json();
   }
 };

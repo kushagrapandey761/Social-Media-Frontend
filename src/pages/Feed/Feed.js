@@ -2,30 +2,8 @@ import React, { useState, useEffect } from 'react';
 import PostForm from '../../components/PostForm/PostForm';
 import PostCard from '../../components/PostCard/PostCard';
 import './Feed.css';
+import { api } from '../../services/api';
 
-const MOCK_POSTS = [
-  {
-    id: 1,
-    userId: 'u1',
-    username: 'Anna Smith',
-    userAvatar: '',
-    content: 'Just launched my new portfolio! Extremely excited to share this with everyone. 🚀✨',
-    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
-    createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-    likes: 42,
-    comments: 5
-  },
-  {
-    id: 2,
-    userId: 'u2',
-    username: 'Devon Miles',
-    userAvatar: '',
-    content: 'Learning React has been quite the journey. Loving the component-based architecture and exactly how easy it is to manage state with hooks.',
-    createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    likes: 128,
-    comments: 14
-  }
-];
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
@@ -33,11 +11,10 @@ const Feed = () => {
 
   useEffect(() => {
     // Simulate API fetch
-    const fetchPosts = () => {
-      setTimeout(() => {
-        setPosts(MOCK_POSTS);
-        setLoading(false);
-      }, 800);
+    const fetchPosts = async () => {
+      const response = await api.getFeed();
+      setPosts(response);
+      setLoading(false);
     };
     fetchPosts();
   }, []);
