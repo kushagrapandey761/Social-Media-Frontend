@@ -38,25 +38,33 @@ export const api = {
       method: "GET",
       credentials: "include"
     });
+    if(res.status === 401){
+      return { message: "Not logged in" };
+    }
     if (!res.ok) {
       throw new Error('Failed to fetch feed');
     }
     return await res.json();
   },
   
-  createPost: async (content, image = null) => {
-    await delay(500);
-    console.log('API: Creating post', { content, image });
-    return {
-      id: Date.now(),
-      userId: 'me',
-      username: 'Current User',
-      content,
-      image,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      comments: 0
-    };
+  createPost: async (content, files) => {
+    const formData = new FormData();
+    formData.append('content', content);
+    if (files) {
+      files.forEach((file, index) => formData.append(`files`, file));
+    }
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/post`, {
+      method: "POST",
+      body: formData,
+      credentials: "include"
+    });
+    if(res.status === 401){
+      return { message: "Not logged in" };
+    }
+    if (!res.ok) {
+      throw new Error('Failed to create post');
+    }
+    return await res.json();
   },
   
   // Users
@@ -81,6 +89,28 @@ export const api = {
     });
     if (!res.ok) {
       throw new Error('Failed to fetch user profile');
+    }
+    return await res.json();
+  },
+
+  getLoggedInUser: async () => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/me`,{
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch logged in user');
+    }
+    return await res.json();
+  },
+
+  toggleLike: async (postId) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/post/${postId}/toggleLike`, {
+      method: "POST",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to like post');
     }
     return await res.json();
   }

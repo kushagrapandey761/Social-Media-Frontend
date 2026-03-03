@@ -1,45 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import PostForm from '../../components/PostForm/PostForm';
-import PostCard from '../../components/PostCard/PostCard';
-import './Feed.css';
-import { api } from '../../services/api';
-
+import React, { useState, useEffect } from "react";
+import PostForm from "../../components/PostForm/PostForm";
+import PostCard from "../../components/PostCard/PostCard";
+import "./Feed.css";
+import { api } from "../../services/api";
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [postCreatingLoader, setPostCreatingLoader] = useState(false);
 
   useEffect(() => {
     // Simulate API fetch
     const fetchPosts = async () => {
       const response = await api.getFeed();
+      if (response.message === "Not logged in") {
+        localStorage.setItem("isLoggedIn", "false");
+        localStorage.removeItem("LoggedInuserDetails");
+        window.location.href = "/login";
+        return;
+      }
+      // Reverse posts to show newest first (assuming API returns oldest first)
+      response.reverse();
       setPosts(response);
       setLoading(false);
     };
     fetchPosts();
+    const userDetails = async () => {
+      const response = await api.getLoggedInUser();
+      localStorage.setItem("LoggedInuserDetails", JSON.stringify(response));
+    }
+    userDetails();
   }, []);
 
-  const handleCreatePost = ({ content }) => {
-    const newPost = {
-      id: Date.now(),
-      userId: 'me',
-      username: 'Current User',
-      userAvatar: '',
-      content,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      comments: 0
-    };
-    // Prepend new post
-    setPosts([newPost, ...posts]);
+  const handleCreatePost = ({ content, files }) => {
+    setPostCreatingLoader(true);
+    api.createPost(content, files || null).then(
+      (newPost) => {
+        // Prepend new post to feed
+        setPosts((prevPosts) => [newPost.post, ...prevPosts]);
+        setPostCreatingLoader(false);
+      },
+      (error) => {
+        console.error("Error creating post:", error);
+        setPostCreatingLoader(false);
+      }
+    );
   };
 
   return (
     <div className="feed-container">
       <div className="feed-main">
         <PostForm onPostCreate={handleCreatePost} />
-        
+
         <div className="feed-content">
+          {postCreatingLoader && (
+            <div className="feed-loading">
+              <div className="spinner"></div>
+              <p>Creating your post...</p>
+            </div>
+          )}
           {loading ? (
             <div className="feed-loading">
               <div className="spinner"></div>
@@ -47,7 +66,7 @@ const Feed = () => {
             </div>
           ) : (
             <div className="posts-list">
-              {posts.map(post => (
+              {posts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
             </div>

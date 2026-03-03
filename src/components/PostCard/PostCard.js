@@ -8,13 +8,31 @@ const PostCard = ({ post }) => {
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
-  const handleLike = () => {
+  useEffect(() => {
+    // Check if user has liked the post (mocked logic, replace with real API check)
+    const loggedInUser = JSON.parse(localStorage.getItem("LoggedInuserDetails"));
+    if (loggedInUser && post.likedBy && post.likedBy.includes(loggedInUser._id)) {
+      setLiked(true);
+    }
+  }, [post.likes]);
+
+  const handleLike = async () => {
     if (liked) {
       setLikeCount(prev => prev - 1);
       setLiked(false);
+      try {
+        await api.toggleLike(post._id); // Assuming this toggles like status
+      } catch (error) {
+        console.error("Error unliking post:", error);
+      }
     } else {
       setLikeCount(prev => prev + 1);
       setLiked(true);
+      try {
+        await api.toggleLike(post._id);
+      } catch (error) {
+        console.error("Error liking post:", error);
+      }
     }
   };
 
