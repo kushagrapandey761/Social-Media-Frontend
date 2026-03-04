@@ -1,7 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import "./App.css";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 // Components
 import Layout from "./components/Layout/Layout";
@@ -10,43 +8,72 @@ import Register from "./pages/Register/Register";
 import Feed from "./pages/Feed/Feed";
 import Users from "./pages/Users/Users";
 import Profile from "./pages/Profile/Profile";
+import ProtectedRoutes from "./components/ProtectedRoutes/ProtectedRoutes";
+import { useEffect, useState } from "react";
 import LandingPage from "./components/LandingPage/LandingPage";
 
 function App() {
-  const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
   useEffect(() => {
-    if(!localStorage.getItem("isLoggedIn")){
-      localStorage.setItem("isLoggedIn", "false");
-      navigate("/login");
-    }
-
-    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    setIsLoggedIn(loggedIn);
+    // Check if user is logged in on app load
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    setLoggedIn(isLoggedIn === "true");
   }, []);
   return (
-    
-      <Routes>
-        {/* Auth Routes w/o Main Layout Navbar */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        {/* Main App Routes w/ Layout Navbar */}
-        <Route path="/" element={
-          <Layout>
-            {isLoggedIn ? <Feed /> : (
-              <div className="home-split-container">
-                <LandingPage />
-                <Login />
-              </div>
-            )}
-          </Layout>
-        } />
-        <Route path="/users" element={<Layout><Users /></Layout>} />
-        <Route path="/profile" element={<Layout><Profile /></Layout>} />
-        <Route path="/profile/:id" element={<Layout><Profile /></Layout>} />
-      </Routes>
-    
+    <Routes>
+      {/* Public Auth Routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      {/* Protected Routes - Wrapped with ProtectedRoutes */}
+      <Route
+        path="/"
+        element={
+          loggedIn ? (
+            <ProtectedRoutes>
+              <Layout>
+                <Feed />
+              </Layout>
+            </ProtectedRoutes>
+          ) : (
+            <div className="home-split-container">
+              <LandingPage />
+              <Login />
+            </div>
+          )
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoutes>
+            <Layout>
+              <Users />
+            </Layout>
+          </ProtectedRoutes>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoutes>
+            <Layout>
+              <Profile />
+            </Layout>
+          </ProtectedRoutes>
+        }
+      />
+      <Route
+        path="/profile/:id"
+        element={
+          <ProtectedRoutes>
+            <Layout>
+              <Profile />
+            </Layout>
+          </ProtectedRoutes>
+        }
+      />
+    </Routes>
   );
 }
 

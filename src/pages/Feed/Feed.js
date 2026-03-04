@@ -13,23 +13,12 @@ const Feed = () => {
     // Simulate API fetch
     const fetchPosts = async () => {
       const response = await api.getFeed();
-      if (response.message === "Not logged in") {
-        localStorage.setItem("isLoggedIn", "false");
-        localStorage.removeItem("LoggedInuserDetails");
-        window.location.href = "/login";
-        return;
-      }
       // Reverse posts to show newest first (assuming API returns oldest first)
       response.reverse();
       setPosts(response);
       setLoading(false);
     };
     fetchPosts();
-    const userDetails = async () => {
-      const response = await api.getLoggedInUser();
-      localStorage.setItem("LoggedInuserDetails", JSON.stringify(response));
-    }
-    userDetails();
   }, []);
 
   const handleCreatePost = ({ content, files }) => {

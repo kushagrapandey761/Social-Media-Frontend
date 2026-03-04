@@ -7,6 +7,7 @@ import { api } from '../../services/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({ 
+    name: '',
     username: '', 
     email: '', 
     password: '',
@@ -15,6 +16,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [error, setError] = useState({
+    name: "",
     username: "",
     email: "",
     password: "",
@@ -30,12 +32,16 @@ const Register = () => {
     
     // Validate form data
     const newError = {
+      name: "",
       username: "",
       email: "",
       password: "",
       confirmPassword: "",
     };
 
+    if(!formData.name) {
+      newError.name = "Name is required";
+    }
     if (!formData.username) {
       newError.username = "Username is required";
     }
@@ -63,7 +69,7 @@ const Register = () => {
     setError(newError);
 
     // Stop submission if validation failed
-    if (newError.username || newError.email || newError.password || newError.confirmPassword) {
+    if (newError.name || newError.username || newError.email || newError.password || newError.confirmPassword) {
       return;
     }
 
@@ -76,6 +82,8 @@ const Register = () => {
       console.error('Registration error:', err);
       if (err.message === 'Email already in use') {
         setError({ ...error, email: 'Email is already registered' });
+      } else if (err.message === 'Username already in use') {
+        setError({ ...error, username: 'Username is already taken' });
       } else {
         setError({ ...error, general: err.message || 'An error occurred. Please try again.' });
       }
@@ -91,70 +99,92 @@ const Register = () => {
           <h2>Create Account</h2>
           <p>Join SocialVibe today</p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
+            <label htmlFor="name">Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Your name"
+            />
+            {error.name && (
+              <span className="error-text">{error.name}</span>
+            )}
+          </div>
+          <div className="form-group">
             <label htmlFor="username">Username</label>
-            <input 
-              type="text" 
-              id="username" 
+            <input
+              type="text"
+              id="username"
               name="username"
-              value={formData.username} 
-              onChange={handleChange} 
+              value={formData.username}
+              onChange={handleChange}
               placeholder="Your username"
             />
-            {error.username && <span className="error-text">{error.username}</span>}
+            {error.username && (
+              <span className="error-text">{error.username}</span>
+            )}
           </div>
 
           <div className="form-group">
             <label htmlFor="email">Email</label>
-            <input 
-              id="email" 
+            <input
+              id="email"
               name="email"
-              value={formData.email} 
-              onChange={handleChange} 
+              value={formData.email}
+              onChange={handleChange}
               placeholder="you@example.com"
             />
             {error.email && <span className="error-text">{error.email}</span>}
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <input 
-              type="password" 
-              id="password" 
+            <input
+              type="password"
+              id="password"
               name="password"
-              value={formData.password} 
-              onChange={handleChange} 
+              value={formData.password}
+              onChange={handleChange}
               placeholder="••••••••"
             />
-            {error.password && <span className="error-text">{error.password}</span>}
+            {error.password && (
+              <span className="error-text">{error.password}</span>
+            )}
           </div>
 
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
-            <input 
-              type="password" 
-              id="confirmPassword" 
+            <input
+              type="password"
+              id="confirmPassword"
               name="confirmPassword"
-              value={formData.confirmPassword} 
-              onChange={handleChange} 
+              value={formData.confirmPassword}
+              onChange={handleChange}
               placeholder="••••••••"
             />
-            {error.confirmPassword && <span className="error-text">{error.confirmPassword}</span>}
+            {error.confirmPassword && (
+              <span className="error-text">{error.confirmPassword}</span>
+            )}
           </div>
-          
-          <button 
-            type="submit" 
-            className={`btn-primary auth-submit ${loading ? 'loading' : ''}`}
+
+          <button
+            type="submit"
+            className={`btn-primary auth-submit ${loading ? "loading" : ""}`}
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Sign Up'}
+            {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
-        
+
         <div className="auth-footer">
-          <p>Already have an account? <Link to="/login">Sign In</Link></p>
+          <p>
+            Already have an account? <Link to="/login">Sign In</Link>
+          </p>
         </div>
       </div>
     </div>

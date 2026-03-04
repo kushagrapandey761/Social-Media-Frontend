@@ -38,9 +38,6 @@ export const api = {
       method: "GET",
       credentials: "include"
     });
-    if(res.status === 401){
-      return { message: "Not logged in" };
-    }
     if (!res.ok) {
       throw new Error('Failed to fetch feed');
     }
@@ -58,9 +55,6 @@ export const api = {
       body: formData,
       credentials: "include"
     });
-    if(res.status === 401){
-      return { message: "Not logged in" };
-    }
     if (!res.ok) {
       throw new Error('Failed to create post');
     }
@@ -113,5 +107,25 @@ export const api = {
       throw new Error('Failed to like post');
     }
     return await res.json();
+  },
+
+  updateUserProfile: async (profileData) => {
+    // FormData: Do NOT set Content-Type header; browser will set it with boundary
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/me`, {
+      method: "PATCH",
+      body: profileData,
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to update profile');
+    }
+    return await res.json();
+  },
+
+  logout: async () => {
+    await fetch(`${process.env.REACT_APP_BASE_URL}/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
   }
 };

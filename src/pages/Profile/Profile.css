@@ -56,8 +56,17 @@
   padding-top: var(--space-md);
   margin-bottom: var(--space-lg);
   min-height: 40px;
+  gap: var(--space-sm);
 }
 
+.logout-btn {
+  background: var(--danger-color);
+  color: #fff;
+}
+
+.logout-btn:hover {
+  background: var(--danger-dark);
+}
 .profile-details {
   display: flex;
   flex-direction: column;
