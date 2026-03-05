@@ -127,5 +127,16 @@ export const api = {
       method: "POST",
       credentials: "include"
     });
+  },
+  
+  getUserPosts: async (userId) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/posts/user/${userId}`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch user posts');
+    }
+    return await res.json();
   }
 };
