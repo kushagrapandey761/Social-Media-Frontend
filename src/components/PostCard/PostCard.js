@@ -1,24 +1,72 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import './PostCard.css';
-import { api } from '../../services/api';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router";
+import "./PostCard.css";
+import { api } from "../../services/api";
+import Modal from "../Modal/Modal";
 
-const PostCard = ({ post }) => {
+const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [isPostOptionsOpen, setIsPostOptionsOpen] = useState(false);
+  const [loader, setLoader] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     // Check if user has liked the post (mocked logic, replace with real API check)
-    const loggedInUser = JSON.parse(localStorage.getItem("LoggedInuserDetails"));
-    if (loggedInUser && post.likedBy && post.likedBy.includes(loggedInUser._id)) {
+    const loggedInUser = JSON.parse(
+      localStorage.getItem("LoggedInuserDetails"),
+    );
+    if (
+      loggedInUser &&
+      post.likedBy &&
+      post.likedBy.includes(loggedInUser._id)
+    ) {
       setLiked(true);
     }
   }, [post.likes]);
 
+  // close the options menu when clicking anywhere outside of it
+  const optionsRef = React.useRef(null);
+  const buttonRef = React.useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      // if menu is open and click target is not inside the menu or the button that toggles it
+      if (
+        isPostOptionsOpen &&
+        optionsRef.current &&
+        !optionsRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        setIsPostOptionsOpen(false);
+      }
+    };
+
+    document.addEventListener("click", handleOutsideClick);
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+    };
+  }, [isPostOptionsOpen]);
+
+  const handlePostDelete = async (postId) => {
+    setIsPostOptionsOpen(false);
+    // Implement post deletion logic here
+    setLoader(true);
+    await api.deletePost(postId);
+
+    setLoader(false);
+    onPostDeleted(postId);
+    // Simulate delay for better UX
+
+    // Optionally, you can trigger a refresh of the post list in the parent component
+    // by calling a prop function passed down from the parent (e.g., onPostDeleted(postId))
+  };
+
   const handleLike = async () => {
     if (liked) {
-      setLikeCount(prev => prev - 1);
+      setLikeCount((prev) => prev - 1);
       setLiked(false);
       try {
         await api.toggleLike(post._id); // Assuming this toggles like status
@@ -26,7 +74,7 @@ const PostCard = ({ post }) => {
         console.error("Error unliking post:", error);
       }
     } else {
-      setLikeCount(prev => prev + 1);
+      setLikeCount((prev) => prev + 1);
       setLiked(true);
       try {
         await api.toggleLike(post._id);
@@ -38,87 +86,200 @@ const PostCard = ({ post }) => {
 
   // Format date helper (mocked implementation)
   const formatDate = (dateString) => {
-    const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
+    const options = {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    };
+    return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
   const hasMedia = post.media && post.media.length > 0;
   const isCarousel = hasMedia && post.media.length > 1;
 
   const nextMedia = () => {
-    setCurrentMediaIndex((prev) => (prev === post.media.length - 1 ? 0 : prev + 1));
+    setCurrentMediaIndex((prev) =>
+      prev === post.media.length - 1 ? 0 : prev + 1,
+    );
   };
 
   const prevMedia = () => {
-    setCurrentMediaIndex((prev) => (prev === 0 ? post.media.length - 1 : prev - 1));
+    setCurrentMediaIndex((prev) =>
+      prev === 0 ? post.media.length - 1 : prev - 1,
+    );
   };
+
+  if (loader) {
+    return (
+      <div className="delete-post-loader">
+        <div className="spinner"></div>
+        <p>Deleting post...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="post-card glass-panel animate-fade-in">
       <div className="post-header">
         <Link to={`/user/${post.authorId}`} className="post-author-info">
-          <div className="author-avatar" style={{ backgroundImage: `url(${post.userAvatar})` }}>
-            {!post.userAvatar && (post.userName || 'U').charAt(0).toUpperCase()}
+          <div
+            className="author-avatar"
+            style={{ backgroundImage: `url(${post.userAvatar})` }}
+          >
+            {!post.userAvatar && (post.userName || "U").charAt(0).toUpperCase()}
           </div>
           <div className="author-meta">
-            <h4 className="author-name">{post.userName || 'Unknown User'}</h4>
-            <span className="post-time">{formatDate(post.createdAt || new Date())}</span>
+            <h4 className="author-name">{post.userName || "Unknown User"}</h4>
+            <span className="post-time">
+              {formatDate(post.createdAt || new Date())}
+            </span>
           </div>
         </Link>
-        <button className="post-options-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <button
+          ref={buttonRef}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsPostOptionsOpen(true);
+          }}
+          className="post-options-btn"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="12" cy="5" r="1"></circle>
             <circle cx="12" cy="12" r="1"></circle>
             <circle cx="12" cy="19" r="1"></circle>
           </svg>
         </button>
+        {isPostOptionsOpen && (
+          <div className="post-options-menu" ref={optionsRef}>
+            {isUsersPost ? (
+              <ul>
+                <div>
+                  <button
+                    onClick={() => {
+                      setIsPostOptionsOpen(false);
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
+                <div>
+                  <button
+                    onClick={() => {
+                      setIsDeleteModalOpen(true);
+                      setIsPostOptionsOpen(false);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </ul>
+            ) : null}
+          </div>
+        )}
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setIsPostOptionsOpen(false);
+          }}
+        >
+          <div className="delete-confirmation">
+            <h3>Confirm Deletion</h3>
+            <p>Are you sure you want to delete this post?</p>
+            <div className="confirmation-actions">
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setIsPostOptionsOpen(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  handlePostDelete(post._id);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
-      
+
       <div className="post-content">
         <p>{post.content}</p>
         {hasMedia && (
           <div className="carousel-container">
             <div className="post-image-container">
-              {post.media[currentMediaIndex].type === 'image' && (
-                <img 
-                  src={post.media[currentMediaIndex].url} 
-                  alt={`Post media ${currentMediaIndex + 1}`} 
-                  className="post-image" 
+              {post.media[currentMediaIndex].type === "image" && (
+                <img
+                  src={post.media[currentMediaIndex].url}
+                  alt={`Post media ${currentMediaIndex + 1}`}
+                  className="post-image"
                 />
               )}
-              {post.media[currentMediaIndex].type === 'video' && (
+              {post.media[currentMediaIndex].type === "video" && (
                 <video controls className="post-video">
-                  <source src={post.media[currentMediaIndex].url} type="video/mp4" />
+                  <source
+                    src={post.media[currentMediaIndex].url}
+                    type="video/mp4"
+                  />
                 </video>
               )}
             </div>
-            
+
             {isCarousel && (
               <>
-                <button 
-                  className="carousel-btn prev-btn" 
+                <button
+                  className="carousel-btn prev-btn"
                   onClick={prevMedia}
                   aria-label="Previous media"
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <polyline points="15 18 9 12 15 6"></polyline>
                   </svg>
                 </button>
-                <button 
-                  className="carousel-btn next-btn" 
+                <button
+                  className="carousel-btn next-btn"
                   onClick={nextMedia}
                   aria-label="Next media"
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <polyline points="9 18 15 12 9 6"></polyline>
                   </svg>
                 </button>
-                
+
                 <div className="carousel-indicators">
                   {post.media.map((_, index) => (
                     <button
                       key={index}
-                      className={`carousel-dot ${index === currentMediaIndex ? 'active' : ''}`}
+                      className={`carousel-dot ${index === currentMediaIndex ? "active" : ""}`}
                       onClick={() => setCurrentMediaIndex(index)}
                       aria-label={`Go to media ${index + 1}`}
                     />
@@ -129,27 +290,48 @@ const PostCard = ({ post }) => {
           </div>
         )}
       </div>
-      
+
       <div className="post-actions-bar">
-        <button 
-          className={`interaction-btn ${liked ? 'liked' : ''}`} 
+        <button
+          className={`interaction-btn ${liked ? "liked" : ""}`}
           onClick={handleLike}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill={liked ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
           </svg>
           <span>{likeCount}</span>
         </button>
-        
+
         <button className="interaction-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
           </svg>
           <span>{post.comments || 0}</span>
         </button>
 
         <button className="interaction-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="18" cy="5" r="3"></circle>
             <circle cx="6" cy="12" r="3"></circle>
             <circle cx="18" cy="19" r="3"></circle>

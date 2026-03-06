@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PostCard from "../../components/PostCard/PostCard";
 import EditProfileModal from "../../components/EditProfileModal/EditProfileModal";
-import MediaModal from "../../components/MediaModal/MediaModal";
 import "./Profile.css";
 import { api } from "../../services/api";
+import Modal from "../../components/Modal/Modal";
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -78,6 +78,11 @@ const Profile = () => {
     }
   };
 
+  const onPostDeleted = (postId) => {
+    // Remove the deleted post from the posts state
+    setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+  }
+
   useEffect(() => {
     const userDetails = JSON.parse(localStorage.getItem("LoggedInuserDetails"));
     setProfile(userDetails);
@@ -103,13 +108,40 @@ const Profile = () => {
           onSave={handleSaveProfile}
         />
       )}
-      {isMediaModalOpen && (
-        <MediaModal
-          media={selectedMedia}
-          isOpen={isMediaModalOpen}
-          onClose={handleCloseMediaModal}
-        />
-      )}
+
+      <Modal isOpen={isMediaModalOpen} onClose={handleCloseMediaModal}>
+        <button className="media-modal-close" onClick={handleCloseMediaModal}>
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        {selectedMedia && (
+          <div>
+            {selectedMedia.type === "image" ? (
+              <img
+                src={selectedMedia.url}
+                alt="Full size media"
+                className="media-modal-image"
+              />
+            ) : (
+              <video controls autoPlay className="media-modal-video">
+                <source src={selectedMedia.url} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            )}
+          </div>
+        )}
+      </Modal>
+
       <div className="profile-header glass-panel">
         <div
           className="profile-cover"
@@ -198,7 +230,14 @@ const Profile = () => {
           <>
             <div className="posts-list">
               {posts.length > 0 ? (
-                posts.map((post) => <PostCard key={post.id} post={post} />)
+                posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    isUsersPost={true}
+                    onPostDeleted={() => onPostDeleted(post._id)}
+                  />
+                ))
               ) : (
                 <div className="empty-state">No posts yet.</div>
               )}

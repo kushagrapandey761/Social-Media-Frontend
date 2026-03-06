@@ -72,8 +72,8 @@ const EditProfileModal = ({ profile, onClose, onSave }) => {
   if (!profile) return null;
 
   const modal = (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+    <div className="edit-profile-modal-overlay" onClick={onClose}>
+      <div className="edit-profile-modal-content" onClick={(e) => e.stopPropagation()}>
         <h2>Edit Profile</h2>
         <form onSubmit={handleSubmit} className="edit-profile-form">
           <label>
@@ -117,7 +117,7 @@ const EditProfileModal = ({ profile, onClose, onSave }) => {
               <input
                 type="file"
                 accept="image/*"
-                onChange={e => handleImageChange(e, 'avatar')}
+                onChange={(e) => handleImageChange(e, "avatar")}
                 className="file-input"
               />
             </div>
@@ -134,7 +134,7 @@ const EditProfileModal = ({ profile, onClose, onSave }) => {
               <input
                 type="file"
                 accept="image/*"
-                onChange={e => handleImageChange(e, 'cover')}
+                onChange={(e) => handleImageChange(e, "cover")}
                 className="file-input"
               />
             </div>

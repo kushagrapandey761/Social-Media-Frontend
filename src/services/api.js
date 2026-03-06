@@ -138,5 +138,16 @@ export const api = {
       throw new Error('Failed to fetch user posts');
     }
     return await res.json();
+  },
+
+  deletePost: async (postId) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/post/${postId}`, {
+      method: "DELETE",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to delete post');
+    }
+    return await res.json();
   }
 };

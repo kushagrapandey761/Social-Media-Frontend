@@ -18,7 +18,7 @@ const ProtectedRoutes = ({ children }) => {
       .catch(() => {
         // failed to validate, clear state and send to login
         localStorage.setItem('isLoggedIn', 'false');
-        navigate('/login');
+        navigate('/');
       })
       .finally(() => {
         setIsLoading(false);
