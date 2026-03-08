@@ -117,7 +117,12 @@ export const api = {
       credentials: "include"
     });
     if (!res.ok) {
-      throw new Error('Failed to update profile');
+      const data = await res.json();
+      if (data.message === "Username already in use") {
+        return { error: "Username already in use" };
+      } else {
+        throw new Error(data.message || "Failed to update profile");
+      }
     }
     return await res.json();
   },
@@ -147,6 +152,17 @@ export const api = {
     });
     if (!res.ok) {
       throw new Error('Failed to delete post');
+    }
+    return await res.json();
+  },
+
+  getAllUsers: async () => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/users`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch users');
     }
     return await res.json();
   }

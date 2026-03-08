@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import './EditProfileModal.css';
 
-const EditProfileModal = ({ profile, onClose, onSave }) => {
+const EditProfileModal = ({ profile, onClose, onSave, usernameError }) => {
   const [formData, setFormData] = useState({
     name: '',
     username: '',
@@ -95,6 +95,7 @@ const EditProfileModal = ({ profile, onClose, onSave }) => {
               onChange={handleChange}
             />
           </label>
+          {usernameError && <p className="error-message">{usernameError}</p>}
 
           <label>
             Bio
@@ -107,7 +108,7 @@ const EditProfileModal = ({ profile, onClose, onSave }) => {
           </label>
 
           <label>
-            Avatar URL
+            Avatar
             <div className="preview-section">
               {avatarPreview && (
                 <div className="avatar-preview">
@@ -124,7 +125,7 @@ const EditProfileModal = ({ profile, onClose, onSave }) => {
           </label>
 
           <label>
-            Cover Image URL
+            Cover Image
             <div className="preview-section">
               {coverPreview && (
                 <div className="cover-preview">

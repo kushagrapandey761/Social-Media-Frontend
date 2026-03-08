@@ -15,6 +15,7 @@ const Profile = () => {
   const [tab, setTab] = useState("posts"); // 'posts', 'media', 'likes'
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
 
   const navigate = useNavigate();
 
@@ -48,6 +49,11 @@ const Profile = () => {
     try {
       setLoading(true);
       const updatedProfile = await api.updateUserProfile(apiFormData);
+      if(updatedProfile.error === "Username already in use") {
+        setUsernameError("Username already in use. Please choose another.");
+        setLoading(false);
+        return;
+      }
       setProfile(updatedProfile);
       localStorage.setItem(
         "LoggedInuserDetails",
@@ -88,7 +94,7 @@ const Profile = () => {
     setProfile(userDetails);
     fetchUserPosts(userDetails?._id);
     setLoading(false);
-  }, []);
+  }, [profile?.userAvatar,profile?.name, profile?.username]);
 
   if (loading) {
     return (
@@ -106,6 +112,7 @@ const Profile = () => {
           profile={profile}
           onClose={handleCloseModal}
           onSave={handleSaveProfile}
+          usernameError={usernameError}
         />
       )}
 

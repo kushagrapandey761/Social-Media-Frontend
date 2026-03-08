@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import './Users.css';
+import { api } from '../../services/api';
 
 const MOCK_USERS = [
   {
@@ -43,11 +44,13 @@ const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      setUsers(MOCK_USERS);
+    async function fetchUsers() {
+      setLoading(true);
+      const res = await api.getAllUsers();
+      setUsers(res);
       setLoading(false);
-    }, 600);
+    }
+    fetchUsers();
   }, []);
 
   const toggleFollow = (userId) => {
@@ -59,8 +62,8 @@ const Users = () => {
   };
 
   const filteredUsers = users.filter(user => 
-    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.handle.toLowerCase().includes(searchQuery.toLowerCase())
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -90,20 +93,20 @@ const Users = () => {
         <div className="users-grid">
           {filteredUsers.length > 0 ? (
             filteredUsers.map(user => (
-              <div key={user.id} className="user-card glass-panel">
-                <Link to={`/profile/${user.id}`} className="user-card-header">
-                  <div className="user-avatar" style={{ backgroundImage: `url(${user.avatar})` }}>
-                    {!user.avatar && user.username.charAt(0)}
+              <div key={user._id} className="user-card glass-panel">
+                <Link to={`/profile/${user._id}`} className="user-card-header">
+                  <div className="user-avatar" style={{ backgroundImage: `url(${user.userAvatar})` }}>
+                    {!user.userAvatar && user.username.charAt(0)}
                   </div>
                   <div className="user-info">
-                    <h3 className="user-name">{user.username}</h3>
-                    <span className="user-handle">{user.handle}</span>
+                    <h3 className="user-name">{user.name}</h3>
+                    <span className="user-handle">{`@${user.username}`}</span>
                   </div>
                 </Link>
                 <p className="user-bio">{user.bio}</p>
                 <button 
                   className={`btn-primary follow-btn-full ${user.isFollowing ? 'following' : ''}`}
-                  onClick={() => toggleFollow(user.id)}
+                  onClick={() => toggleFollow(user._id)}
                 >
                   {user.isFollowing ? 'Following' : 'Follow'}
                 </button>

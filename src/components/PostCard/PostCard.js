@@ -164,15 +164,6 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
                 <div>
                   <button
                     onClick={() => {
-                      setIsPostOptionsOpen(false);
-                    }}
-                  >
-                    Edit
-                  </button>
-                </div>
-                <div>
-                  <button
-                    onClick={() => {
                       setIsDeleteModalOpen(true);
                       setIsPostOptionsOpen(false);
                     }}
