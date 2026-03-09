@@ -3,40 +3,6 @@ import { Link } from 'react-router';
 import './Users.css';
 import { api } from '../../services/api';
 
-const MOCK_USERS = [
-  {
-    id: 'u1',
-    username: 'Anna Smith',
-    handle: '@annasmith',
-    bio: 'Digital nomad and photographer.',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-    isFollowing: false
-  },
-  {
-    id: 'u2',
-    username: 'Devon Miles',
-    handle: '@devonm',
-    bio: 'Software engineer building web things.',
-    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=150&q=80',
-    isFollowing: true
-  },
-  {
-    id: 'u3',
-    username: 'Sarah Code',
-    handle: '@sarahcode',
-    bio: 'Just another tech enthusiast. Coffee addict.',
-    avatar: '',
-    isFollowing: false
-  },
-  {
-    id: 'u4',
-    username: 'Max Design',
-    handle: '@maxdesign',
-    bio: 'UI/UX Designer striving for pixel perfection.',
-    avatar: '',
-    isFollowing: true
-  }
-];
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -53,12 +19,15 @@ const Users = () => {
     fetchUsers();
   }, []);
 
-  const toggleFollow = (userId) => {
+  const toggleFollow = async (userId) => {
+    await api.toggleFollow(userId);
     setUsers(users.map(user => 
-      user.id === userId 
+      user._id === userId 
         ? { ...user, isFollowing: !user.isFollowing } 
         : user
     ));
+    const res = await api.getLoggedInUser();
+    localStorage.setItem('LoggedInuserDetails', JSON.stringify(res));
   };
 
   const filteredUsers = users.filter(user => 

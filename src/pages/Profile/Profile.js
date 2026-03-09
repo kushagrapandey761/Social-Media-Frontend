@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import PostCard from "../../components/PostCard/PostCard";
 import EditProfileModal from "../../components/EditProfileModal/EditProfileModal";
 import "./Profile.css";
@@ -7,6 +7,7 @@ import { api } from "../../services/api";
 import Modal from "../../components/Modal/Modal";
 
 const Profile = () => {
+  const {id} = useParams();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [media, setMedia] = useState([]);
@@ -90,11 +91,24 @@ const Profile = () => {
   }
 
   useEffect(() => {
-    const userDetails = JSON.parse(localStorage.getItem("LoggedInuserDetails"));
-    setProfile(userDetails);
-    fetchUserPosts(userDetails?._id);
-    setLoading(false);
-  }, [profile?.userAvatar,profile?.name, profile?.username]);
+    if(id) {
+      api.getUserProfile(id)
+        .then((res) => {
+          setProfile(res);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch user profile:", err);
+          alert("Failed to load profile. Please try again.");
+          navigate("/");
+        });
+        fetchUserPosts(id);
+        setLoading(false);
+    } else {
+      const userDetails = JSON.parse(localStorage.getItem("LoggedInuserDetails"));
+      setProfile(userDetails);
+      fetchUserPosts(userDetails?._id);
+      setLoading(false);
+  }}, [id, profile?.userAvatar,profile?.name, profile?.username]);
 
   if (loading) {
     return (
@@ -167,9 +181,11 @@ const Profile = () => {
           </div>
 
           <div className="profile-actions">
-            <button className="btn-secondary" onClick={handleEditClick}>
-              Edit Profile
-            </button>
+            {id ? (null) : (
+              <button className="btn-secondary" onClick={handleEditClick}>
+                Edit Profile
+              </button>
+            )}
             <button className="btn-secondary logout-btn" onClick={handleLogout}>
               Logout
             </button>
@@ -241,7 +257,7 @@ const Profile = () => {
                   <PostCard
                     key={post.id}
                     post={post}
-                    isUsersPost={true}
+                    isUsersPost={id ? false : true}
                     onPostDeleted={() => onPostDeleted(post._id)}
                   />
                 ))

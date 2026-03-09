@@ -13,7 +13,7 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
-    // Check if user has liked the post (mocked logic, replace with real API check)
+    // Check if user has liked the post
     const loggedInUser = JSON.parse(
       localStorage.getItem("LoggedInuserDetails"),
     );
@@ -23,8 +23,11 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
       post.likedBy.includes(loggedInUser._id)
     ) {
       setLiked(true);
+    } else {
+      setLiked(false);
     }
-  }, [post.likes]);
+    setLikeCount(post.likes || 0);
+  }, [post._id, post.likedBy, post.likes]);
 
   // close the options menu when clicking anywhere outside of it
   const optionsRef = React.useRef(null);

@@ -165,5 +165,16 @@ export const api = {
       throw new Error('Failed to fetch users');
     }
     return await res.json();
+  },
+
+  toggleFollow: async (userId) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/toggleFollow/${userId}`, {
+      method: "POST",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to toggle follow');
+    }
+    return await res.json();
   }
 };
