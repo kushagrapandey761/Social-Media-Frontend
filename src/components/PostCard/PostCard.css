@@ -293,3 +293,235 @@
   gap: var(--space-sm);
   margin-top: var(--space-md);
 }
+
+/* Comments Section */
+.post-comments-section {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.comments-loader {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: var(--space-sm) 0;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.comment-item {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-start;
+}
+
+.comment-author-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: var(--primary-color);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.comment-content-wrap {
+  background: rgba(255, 255, 255, 0.03);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  flex-grow: 1;
+}
+
+.comment-author-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.comment-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.no-comments-msg {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: var(--space-sm) 0;
+}
+
+.comment-input-form {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.comment-input-form input {
+  flex-grow: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  padding: 10px 14px;
+  border-radius: var(--radius-full);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.comment-input-form input:focus {
+  border-color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.comment-input-form button {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0 16px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.comment-input-form button:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.comment-input-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Nested Replies Section */
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comment-actions {
+  padding-left: 44px; /* Align with comment content, 32px avatar + 12px gap approx */
+  margin-top: -2px;
+  margin-bottom: 4px;
+}
+
+.toggle-replies-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toggle-replies-btn:hover {
+  color: var(--text-primary);
+}
+
+.replies-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding-left: 44px;
+  margin-top: 4px;
+  position: relative;
+}
+
+.replies-list-container::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 10px;
+  width: 2px;
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+.reply-item {
+  position: relative;
+}
+
+.reply-avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+}
+
+.reply-content {
+  padding: 8px 12px;
+}
+
+.reply-action-btn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  margin-top: 4px;
+  transition: color var(--transition-fast);
+}
+
+.reply-action-btn:hover {
+  color: var(--primary-color);
+}
+
+.replying-indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--primary-color);
+  padding: 0 14px 4px 14px;
+}
+
+.replying-indicator button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.replying-indicator button:hover {
+  text-decoration: underline;
+}
+
+.input-group {
+  display: flex;
+  gap: var(--space-sm);
+  width: 100%;
+}
+

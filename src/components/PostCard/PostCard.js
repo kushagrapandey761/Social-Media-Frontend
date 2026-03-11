@@ -11,6 +11,41 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
   const [isPostOptionsOpen, setIsPostOptionsOpen] = useState(false);
   const [loader, setLoader] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [addingComment, setAddingComment] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState({});
+  const [replyingTo, setReplyingTo] = useState(null); // Tracks the comment _id being replied to
+
+  const toggleReplies = async (commentId) => {
+    if (!expandedReplies[commentId]) {
+      try {
+        const fetchedRepliesData = await api.getReplies(commentId);
+        const fetchedReplies = Array.isArray(fetchedRepliesData) 
+          ? fetchedRepliesData 
+          : (fetchedRepliesData.replies || []);
+          
+        setComments((prevComments) => {
+          // Filter out replies we already have to prevent duplicates
+          const newReplies = fetchedReplies.filter(
+            (newReply) => !prevComments.some((c) => c._id === newReply._id)
+          );
+          return [...prevComments, ...newReplies];
+        });
+      } catch (error) {
+        console.error("Error fetching replies:", error);
+      }
+    }
+
+    setExpandedReplies((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
+  };
+
+  const topLevelComments = comments.filter((c) => !c.parentCommentId);
 
   useEffect(() => {
     // Check if user has liked the post
@@ -65,6 +100,63 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
 
     // Optionally, you can trigger a refresh of the post list in the parent component
     // by calling a prop function passed down from the parent (e.g., onPostDeleted(postId))
+  };
+
+  const handleCommentClick = async () => {
+    setShowComments(!showComments);
+    if (!showComments && comments.length === 0) {
+      setLoadingComments(true);
+      try {
+        const data = await api.getComments(post._id);
+        const fetchedComments = Array.isArray(data) ? data : (data.comments || []);
+        setComments(fetchedComments);
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      } finally {
+        setLoadingComments(false);
+      }
+    }
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    setAddingComment(true);
+    try {
+      if (replyingTo) {
+        // Add a reply
+        const data = await api.addReply(replyingTo, newComment);
+        const addedReply = data.reply || data;
+        setComments((prev) => {
+          return prev.map((c) => {
+            if (c._id === replyingTo) {
+              // Calculate the current reply count properly
+              const currentReplyCount = c.replyCount !== undefined 
+                ? c.replyCount 
+                : prev.filter((r) => r.parentCommentId === c._id).length;
+              return { ...c, replyCount: currentReplyCount + 1 };
+            }
+            return c;
+          }).concat(addedReply);
+        });
+        
+        // Ensure the parent thread is expanded so the user sees their new reply
+        if (!expandedReplies[replyingTo]) {
+           setExpandedReplies(prev => ({ ...prev, [replyingTo]: true }));
+        }
+      } else {
+        // Add a top-level comment
+        const data = await api.addComment(post._id, newComment);
+        const added = data.comment || data;
+        setComments((prev) => [...prev, added]);
+      }
+      setNewComment("");
+      setReplyingTo(null);
+    } catch (error) {
+      console.error("Error adding comment/reply:", error);
+    } finally {
+      setAddingComment(false);
+    }
   };
 
   const handleLike = async () => {
@@ -303,7 +395,7 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
           <span>{likeCount}</span>
         </button>
 
-        <button className="interaction-btn">
+        <button className="interaction-btn" onClick={handleCommentClick}>
           <svg
             width="20"
             height="20"
@@ -314,7 +406,7 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
           >
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
           </svg>
-          <span>{post.comments || 0}</span>
+          <span>{post.commentsCount || 0}</span>
         </button>
 
         <button className="interaction-btn">
@@ -335,6 +427,131 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
           <span>Share</span>
         </button>
       </div>
+
+      {showComments && (
+        <div className="post-comments-section animate-fade-in">
+          {loadingComments ? (
+            <div className="comments-loader">Loading comments...</div>
+          ) : (
+            <div className="comments-list">
+              {topLevelComments.length > 0 ? (
+                topLevelComments.map((comment, index) => {
+                  const replies = comments.filter((c) => c.parentCommentId === comment._id);
+                  const replyCount = comment.replyCount || replies.length;
+                  const isExpanded = expandedReplies[comment._id];
+
+                  return (
+                    <div key={comment._id || index} className="comment-thread">
+                      <div className="comment-item">
+                        <div
+                          className="comment-author-avatar"
+                          style={{ backgroundImage: `url(${comment.authorId?.userAvatar})` }}
+                        >
+                          {!comment.authorId?.userAvatar &&
+                            (comment.authorId?.username || "U").charAt(0).toUpperCase()}
+                        </div>
+                        <div className="comment-content-wrap">
+                          <span className="comment-author-name">
+                            {comment.authorId?.username || "User"}
+                          </span>
+                          <p className="comment-text">{comment.text}</p>
+                          <button 
+                            className="reply-action-btn"
+                            onClick={() => {
+                              setReplyingTo(comment._id);
+                              // Optional: document.querySelector('.comment-input-form input')?.focus();
+                            }}
+                          >
+                            Reply
+                          </button>
+                        </div>
+                      </div>
+
+                      {(replyCount > 0) && (
+                        <div className="comment-actions">
+                          <button
+                            className="toggle-replies-btn"
+                            onClick={() => toggleReplies(comment._id)}
+                          >
+                            {isExpanded
+                              ? "Hide replies"
+                              : `Show replies (${replyCount})`}
+                          </button>
+                        </div>
+                      )}
+
+                      {isExpanded && replies.length > 0 && (
+                        <div className="replies-list-container">
+                          {replies.map((reply, rIndex) => (
+                            <div key={reply._id || `reply-${rIndex}`} className="comment-item reply-item">
+                              <div
+                                className="comment-author-avatar reply-avatar"
+                                style={{ backgroundImage: `url(${reply.authorId?.userAvatar})` }}
+                              >
+                                {!reply.authorId?.userAvatar &&
+                                  (reply.authorId?.username || "U").charAt(0).toUpperCase()}
+                              </div>
+                              <div className="comment-content-wrap reply-content">
+                                <span className="comment-author-name">
+                                  {reply.authorId?.username || "User"}
+                                </span>
+                                <p className="comment-text">{reply.text}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {replyingTo === comment._id && (
+                        <div className="reply-input-container" style={{ margin: "10px 0 0 40px" }}>
+                          <form className="comment-input-form" onSubmit={handleAddComment} style={{ marginTop: 0 }}>
+                            <div className="replying-indicator" style={{ marginBottom: "8px" }}>
+                              Replying to {comment.authorId?.username || "user"}... 
+                              <button type="button" onClick={() => { setReplyingTo(null); setNewComment(""); }} style={{ marginLeft: "10px", background: "none", border: "none", color: "var(--accent-color)", cursor: "pointer", fontSize: "0.85rem" }}>Cancel</button>
+                            </div>
+                            <div className="input-group">
+                              <input
+                                autoFocus
+                                type="text"
+                                placeholder="Write a reply..."
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                disabled={addingComment}
+                              />
+                              <button type="submit" disabled={!newComment.trim() || addingComment}>
+                                {addingComment ? "..." : "Post"}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="no-comments-msg">No comments yet. Be the first to comment!</p>
+              )}
+            </div>
+          )}
+          
+          {!replyingTo && (
+            <form className="comment-input-form" onSubmit={handleAddComment}>
+              <div className="input-group">
+                <input
+                  type="text"
+                  placeholder="Write a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  disabled={addingComment}
+                />
+                <button type="submit" disabled={!newComment.trim() || addingComment}>
+                  {addingComment ? "..." : "Post"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
     </div>
   );
 };

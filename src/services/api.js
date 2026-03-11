@@ -176,5 +176,53 @@ export const api = {
       throw new Error('Failed to toggle follow');
     }
     return await res.json();
-  }
+  },
+
+  getComments: async (postId) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/comments/${postId}`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    return await res.json();
+  },
+
+  addComment: async (postId, text) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/comment/${postId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to add comment');
+    }
+    return await res.json();
+  },
+
+  getReplies: async (commentId) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/replies/${commentId}`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch replies');
+    }
+    return await res.json();
+  },
+
+  addReply: async (commentId, text) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/reply/${commentId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to add reply');
+    }
+    return await res.json();
+  },
 };
