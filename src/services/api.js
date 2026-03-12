@@ -43,6 +43,17 @@ export const api = {
     }
     return await res.json();
   },
+
+  getPost: async (postId) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/post/${postId}`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch post');
+    }
+    return await res.json();
+  },
   
   createPost: async (content, files) => {
     const formData = new FormData();

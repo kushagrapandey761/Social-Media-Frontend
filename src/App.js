@@ -11,6 +11,7 @@ import Profile from "./pages/Profile/Profile";
 import ProtectedRoutes from "./components/ProtectedRoutes/ProtectedRoutes";
 import { useEffect, useState } from "react";
 import LandingPage from "./components/LandingPage/LandingPage";
+import PostCard from "./components/PostCard/PostCard";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -72,6 +73,16 @@ function App() {
             </Layout>
           </ProtectedRoutes>
         }
+      />
+      <Route
+      path="/post/:id"
+      element={
+        <ProtectedRoutes>
+          <Layout>
+            <PostCard />
+          </Layout>
+        </ProtectedRoutes>
+      }
       />
     </Routes>
   );

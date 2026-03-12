@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
 import "./PostCard.css";
 import { api } from "../../services/api";
 import Modal from "../Modal/Modal";
 
-const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
+const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
+  const {id} = useParams();
+  const [post, setPost] = useState(initialPost || null);
+  const [loadingPost, setLoadingPost] = useState(!initialPost && !!id);
+  const [postError, setPostError] = useState(null);
+
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes || 0);
+  const [likeCount, setLikeCount] = useState(initialPost?.likes || 0);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isPostOptionsOpen, setIsPostOptionsOpen] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -18,6 +23,29 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
   const [addingComment, setAddingComment] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null); // Tracks the comment _id being replied to
+
+  useEffect(() => {
+    if (id && !initialPost) {
+      const fetchPost = async () => {
+        try {
+          setLoadingPost(true);
+          const data = await api.getPost(id);
+          const fetchedPost = data.post || data;
+          setPost(fetchedPost);
+          setLikeCount(fetchedPost.likes || 0);
+        } catch (error) {
+          console.error("Error fetching post by id:", error);
+          setPostError("Failed to load post.");
+        } finally {
+          setLoadingPost(false);
+        }
+      };
+      fetchPost();
+    } else if (initialPost) {
+      setPost(initialPost);
+      setLikeCount(initialPost.likes || 0);
+    }
+  }, [id, initialPost]);
 
   const toggleReplies = async (commentId) => {
     if (!expandedReplies[commentId]) {
@@ -48,6 +76,7 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
   const topLevelComments = comments.filter((c) => !c.parentCommentId);
 
   useEffect(() => {
+    if (!post) return;
     // Check if user has liked the post
     const loggedInUser = JSON.parse(
       localStorage.getItem("LoggedInuserDetails"),
@@ -62,7 +91,7 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
       setLiked(false);
     }
     setLikeCount(post.likes || 0);
-  }, [post._id, post.likedBy, post.likes]);
+  }, [post?._id, post?.likedBy, post?.likes]);
 
   // close the options menu when clicking anywhere outside of it
   const optionsRef = React.useRef(null);
@@ -148,7 +177,7 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
         // Add a top-level comment
         const data = await api.addComment(post._id, newComment);
         const added = data.comment || data;
-        setComments((prev) => [...prev, added]);
+        setComments((prev) => [added, ...prev]);
       }
       setNewComment("");
       setReplyingTo(null);
@@ -190,6 +219,23 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
     return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
+  if (loadingPost || loader) {
+    return (
+      <div className="delete-post-loader">
+        <div className="spinner"></div>
+        <p>{loader ? "Deleting post..." : "Loading post..."}</p>
+      </div>
+    );
+  }
+
+  if (postError || !post) {
+    return (
+      <div className="post-card glass-panel" style={{ textAlign: "center", padding: "2rem" }}>
+        <p>{postError || "Post not found."}</p>
+      </div>
+    );
+  }
+
   const hasMedia = post.media && post.media.length > 0;
   const isCarousel = hasMedia && post.media.length > 1;
 
@@ -204,15 +250,6 @@ const PostCard = ({ post, isUsersPost, onPostDeleted }) => {
       prev === 0 ? post.media.length - 1 : prev - 1,
     );
   };
-
-  if (loader) {
-    return (
-      <div className="delete-post-loader">
-        <div className="spinner"></div>
-        <p>Deleting post...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="post-card glass-panel animate-fade-in">
