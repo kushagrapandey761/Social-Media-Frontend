@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import socket from '../../socket';
 
 const ProtectedRoutes = ({ children }) => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const ProtectedRoutes = ({ children }) => {
         setIsLoggedIn(true);
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('LoggedInuserDetails', JSON.stringify(res));
+        socket.emit("register", res._id);
       })
       .catch(() => {
         // failed to validate, clear state and send to login

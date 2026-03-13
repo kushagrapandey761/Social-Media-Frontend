@@ -12,6 +12,8 @@ import ProtectedRoutes from "./components/ProtectedRoutes/ProtectedRoutes";
 import { useEffect, useState } from "react";
 import LandingPage from "./components/LandingPage/LandingPage";
 import PostCard from "./components/PostCard/PostCard";
+import socket from "./socket";
+import Chat from "./components/Chat/Chat";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -19,6 +21,16 @@ function App() {
     // Check if user is logged in on app load
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     setLoggedIn(isLoggedIn === "true");
+  }, []);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Connected:", socket.id);
+    });
+
+    return () => {
+      socket.off("connect");
+    };
   }, []);
   return (
     <Routes>
@@ -80,6 +92,16 @@ function App() {
         <ProtectedRoutes>
           <Layout>
             <PostCard />
+          </Layout>
+        </ProtectedRoutes>
+      }
+      />
+      <Route
+      path="/chat"
+      element={
+        <ProtectedRoutes>
+          <Layout>
+            <Chat />
           </Layout>
         </ProtectedRoutes>
       }
