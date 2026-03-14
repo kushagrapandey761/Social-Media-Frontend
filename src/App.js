@@ -17,6 +17,7 @@ import Chat from "./components/Chat/Chat";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   useEffect(() => {
     // Check if user is logged in on app load
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -30,6 +31,16 @@ function App() {
 
     return () => {
       socket.off("connect");
+    };
+  }, []);
+
+  useEffect(() => {
+    socket.on("onlineUsers", (users) => {
+      setOnlineUsers(users);
+    });
+
+    return () => {
+      socket.off("onlineUsers");
     };
   }, []);
   return (
@@ -101,7 +112,7 @@ function App() {
       element={
         <ProtectedRoutes>
           <Layout>
-            <Chat />
+            <Chat onlineUsers={onlineUsers}/>
           </Layout>
         </ProtectedRoutes>
       }

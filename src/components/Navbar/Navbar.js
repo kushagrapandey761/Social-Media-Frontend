@@ -32,6 +32,7 @@ const Navbar = () => {
         <div className="navbar-menu">
           <Link to="/" className="nav-link">Feed</Link>
           <Link to="/users" className="nav-link">Users</Link>
+          <Link to="/chat" className="nav-link">Messages</Link>
           <Link to="/profile" className="nav-link">Profile</Link>
         </div>
 
@@ -51,6 +52,7 @@ const Navbar = () => {
       <div className={`mobile-menu ${mobileMenuOpen ? 'active' : ''}`}>
         <Link to="/" className="mobile-link">Feed</Link>
         <Link to="/users" className="mobile-link">Users</Link>
+        <Link to="/chat" className="mobile-link">Messages</Link>
         <Link to="/profile" className="mobile-link">Profile</Link>
         <div className="mobile-actions">
           <Link to="/login" className="btn-secondary mobile-btn">Log In</Link>

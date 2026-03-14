@@ -236,4 +236,39 @@ export const api = {
     }
     return await res.json();
   },
+
+  getChats: async () => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/chats`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch chats');
+    }
+    return await res.json();
+  },
+
+  getMessages: async (userId) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/messages/${userId}`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch messages');
+    }
+    return await res.json();
+  },
+
+  sendMessage: async (messageData) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(messageData),
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to send message');
+    }
+    return await res.json();
+  },
 };
