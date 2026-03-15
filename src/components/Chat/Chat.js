@@ -3,6 +3,36 @@ import "./Chat.css";
 import socket from "../../socket";
 import { api } from "../../services/api";
 
+const getCompareDate = (m) => m && m.createdAt ? new Date(m.createdAt).toDateString() : new Date().toDateString();
+
+const formatDateLabel = (dateString) => {
+  if (!dateString || isNaN(new Date(dateString))) {
+    return "Today";
+  }
+
+  const date = new Date(dateString);
+  const now = new Date();
+  
+  // Normalize dates to midnight for comparison
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  if (messageDate.getTime() === today.getTime()) {
+    return "Today";
+  } else if (messageDate.getTime() === yesterday.getTime()) {
+    return "Yesterday";
+  } else {
+    return date.toLocaleDateString([], { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  }
+};
+
 const Chat = ({onlineUsers, typingData, messageSeenData}) => {
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
@@ -18,33 +48,6 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
     }
   };
 
-  const formatDateLabel = (dateString) => {
-    if (!dateString || isNaN(new Date(dateString))) {
-      return "Today";
-    }
-
-    const date = new Date(dateString);
-    const now = new Date();
-    
-    // Normalize dates to midnight for comparison
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-    if (messageDate.getTime() === today.getTime()) {
-      return "Today";
-    } else if (messageDate.getTime() === yesterday.getTime()) {
-      return "Yesterday";
-    } else {
-      return date.toLocaleDateString([], { 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric' 
-      });
-    }
-  };
 
   useEffect(() => {
     scrollToBottom();
@@ -98,23 +101,12 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
 
     if (isFromActiveChat) {
 
-      // Add message to UI
-      setMessages(prev => [...prev, message]);
+      // Add message to UI and mark as seen immediately
+      setMessages(prev => [...prev, { ...message, seen: true }]);
 
-      // Mark message as seen immediately
       socket.emit("messageSeen", {
-        receiverId: currentUser._id,
         senderId: message.senderId
       });
-
-      // Update UI immediately
-      setMessages(prev =>
-        prev.map(msg =>
-          msg._id === message._id
-            ? { ...msg, seen: true }
-            : msg
-        )
-      );
 
     } else {
 
@@ -133,42 +125,34 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
 
 }, [activeChat, currentUser]);
 
-  // Handle real-time "Seen" updates from other users
+  // Updating messages when the other user has seen them
   useEffect(() => {
 
     if (!messageSeenData || !activeChat || !currentUser) return;
 
     if (String(messageSeenData.receiverId) !== String(activeChat._id)) return;
 
-    setMessages(prev =>
-      prev.map(msg => {
-        if (
-          String(msg.senderId) === String(currentUser._id) &&
-          String(msg.receiverId) === String(activeChat._id) &&
-          !msg.seen
-        ) {
-          return { ...msg, seen: true };
-        }
-        return msg;
-      })
-    );
+    setMessages(prev => prev.map(msg => 
+      (String(msg.senderId) === String(currentUser._id) && !msg.seen) 
+        ? { ...msg, seen: true } 
+        : msg
+    ));
 
   }, [messageSeenData, activeChat, currentUser]);
 
-  // Handle marking received messages as "Seen" when chat is active
+  // Marking messages as seen when you open/read them
   useEffect(() => {
     if (activeChat && currentUser && messages.length > 0) {
       const hasUnseenMessages = messages.some(msg => msg.senderId === activeChat._id && !msg.seen);
       
       if (hasUnseenMessages) {
-        socket.emit("messageSeen", { receiverId: currentUser._id, senderId: activeChat._id });
+        socket.emit("messageSeen", { senderId: activeChat._id });
         
-        setMessages(prev => prev.map(msg => {
-          if (msg.senderId === activeChat._id && msg.receiverId === currentUser?._id && !msg.seen) {
-            return { ...msg, seen: true };
-          }
-          return msg;
-        }));
+        setMessages(prev => prev.map(msg => 
+          (msg.senderId === activeChat._id && !msg.seen) 
+            ? { ...msg, seen: true } 
+            : msg
+        ));
       }
     }
   }, [activeChat, messages, currentUser]);
@@ -193,14 +177,14 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
 
   const handleTyping = (e) => {
     setNewMessage(e.target.value)
-    socket.emit("typing", { receiverId: activeChat._id, senderId: currentUser._id});
+    socket.emit("typing", { receiverId: activeChat._id });
     
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
     
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("stopTyping", { receiverId: activeChat._id, senderId: currentUser._id});
+      socket.emit("stopTyping", { receiverId: activeChat._id });
     }, 1000);
   }
 
@@ -245,9 +229,6 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
               <div className="messages-list" ref={messagesContainerRef}>
                 {messages.map((msg, index) => {
                   const prevMsg = messages[index - 1];
-                  
-                  // Helper to get normalized date string for comparison
-                  const getCompareDate = (m) => m && m.createdAt ? new Date(m.createdAt).toDateString() : new Date().toDateString();
                   
                   const showDateSeparator = !prevMsg || getCompareDate(msg) !== getCompareDate(prevMsg);
 
