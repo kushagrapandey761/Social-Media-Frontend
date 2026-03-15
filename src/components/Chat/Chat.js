@@ -3,17 +3,46 @@ import "./Chat.css";
 import socket from "../../socket";
 import { api } from "../../services/api";
 
-const Chat = ({onlineUsers}) => {
+const Chat = ({onlineUsers, typingData, messageSeenData}) => {
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const messagesContainerRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
+
+  const formatDateLabel = (dateString) => {
+    if (!dateString || isNaN(new Date(dateString))) {
+      return "Today";
+    }
+
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // Normalize dates to midnight for comparison
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    if (messageDate.getTime() === today.getTime()) {
+      return "Today";
+    } else if (messageDate.getTime() === yesterday.getTime()) {
+      return "Yesterday";
+    } else {
+      return date.toLocaleDateString([], { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
     }
   };
 
@@ -59,23 +88,90 @@ const Chat = ({onlineUsers}) => {
   }, [activeChat]);
 
   useEffect(() => {
-    socket.on("receiveMessage", (message) => {
-      
-      // Use String() to ensure we compare strings, avoiding potential ObjectId vs String issues
-      const isFromActiveChat = activeChat && (
-        String(message.senderId) === String(activeChat._id) || 
-        String(message.receiverId) === String(activeChat._id)
+
+  const handleReceiveMessage = (message) => {
+
+    if (!activeChat || !currentUser) return;
+
+    const isFromActiveChat =
+      String(message.senderId) === String(activeChat._id);
+
+    if (isFromActiveChat) {
+
+      // Add message to UI
+      setMessages(prev => [...prev, message]);
+
+      // Mark message as seen immediately
+      socket.emit("messageSeen", {
+        receiverId: currentUser._id,
+        senderId: message.senderId
+      });
+
+      // Update UI immediately
+      setMessages(prev =>
+        prev.map(msg =>
+          msg._id === message._id
+            ? { ...msg, seen: true }
+            : msg
+        )
       );
 
-      if (isFromActiveChat) {
-        setMessages((prev) => [...prev, message]);
-      }
-    });
+    } else {
 
-    return () => {
-      socket.off("receive_message");
-    };
-  }, [activeChat]);
+      // message from another chat
+      setMessages(prev => [...prev, message]);
+
+    }
+
+  };
+
+  socket.on("receiveMessage", handleReceiveMessage);
+
+  return () => {
+    socket.off("receiveMessage", handleReceiveMessage);
+  };
+
+}, [activeChat, currentUser]);
+
+  // Handle real-time "Seen" updates from other users
+  useEffect(() => {
+
+    if (!messageSeenData || !activeChat || !currentUser) return;
+
+    if (String(messageSeenData.receiverId) !== String(activeChat._id)) return;
+
+    setMessages(prev =>
+      prev.map(msg => {
+        if (
+          String(msg.senderId) === String(currentUser._id) &&
+          String(msg.receiverId) === String(activeChat._id) &&
+          !msg.seen
+        ) {
+          return { ...msg, seen: true };
+        }
+        return msg;
+      })
+    );
+
+  }, [messageSeenData, activeChat, currentUser]);
+
+  // Handle marking received messages as "Seen" when chat is active
+  useEffect(() => {
+    if (activeChat && currentUser && messages.length > 0) {
+      const hasUnseenMessages = messages.some(msg => msg.senderId === activeChat._id && !msg.seen);
+      
+      if (hasUnseenMessages) {
+        socket.emit("messageSeen", { receiverId: currentUser._id, senderId: activeChat._id });
+        
+        setMessages(prev => prev.map(msg => {
+          if (msg.senderId === activeChat._id && msg.receiverId === currentUser?._id && !msg.seen) {
+            return { ...msg, seen: true };
+          }
+          return msg;
+        }));
+      }
+    }
+  }, [activeChat, messages, currentUser]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -88,12 +184,29 @@ const Chat = ({onlineUsers}) => {
 
 
     // Optimistic UI update
-    setMessages((prev) => [...prev, {...messageData, senderId: currentUser._id,}]);
+    setMessages((prev) => [...prev, {...messageData, senderId: currentUser._id}]);
     
     await api.sendMessage(messageData);
     
     setNewMessage("");
   };
+
+  const handleTyping = (e) => {
+    setNewMessage(e.target.value)
+    socket.emit("typing", { receiverId: activeChat._id, senderId: currentUser._id});
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stopTyping", { receiverId: activeChat._id, senderId: currentUser._id});
+    }, 1000);
+  }
+
+  const handleSetActiveChat = (user) => {
+    setActiveChat(user);
+  }
 
   return (
     <div className="chat-container">
@@ -106,7 +219,7 @@ const Chat = ({onlineUsers}) => {
             <div
               key={user._id}
               className={`chat-item ${activeChat?._id === user._id ? "active" : ""}`}
-              onClick={() => setActiveChat(user)}
+              onClick={() => handleSetActiveChat(user)}
             >
               <div className="chat-item-avatar">
                 {user.username.charAt(0).toUpperCase()}
@@ -129,23 +242,54 @@ const Chat = ({onlineUsers}) => {
                 <span className="online-dot"></span>
               )}
             </div>
-            <div className="messages-list" ref={messagesContainerRef}>
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`message-wrapper ${msg.senderId === currentUser?._id ? "sent" : "received"}`}
-                >
-                  <div className="message-bubble">
-                    {msg.text}
-                    <span className="message-time">
-                      {msg.createdAt && !isNaN(new Date(msg.createdAt)) 
-                        ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : 'Just now'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+              <div className="messages-list" ref={messagesContainerRef}>
+                {messages.map((msg, index) => {
+                  const prevMsg = messages[index - 1];
+                  
+                  // Helper to get normalized date string for comparison
+                  const getCompareDate = (m) => m && m.createdAt ? new Date(m.createdAt).toDateString() : new Date().toDateString();
+                  
+                  const showDateSeparator = !prevMsg || getCompareDate(msg) !== getCompareDate(prevMsg);
+
+                  return (
+                    <React.Fragment key={index}>
+                      {showDateSeparator && (
+                        <div className="date-separator">
+                          <span className="date-label">{formatDateLabel(msg.createdAt)}</span>
+                        </div>
+                      )}
+                      <div
+                        className={`message-wrapper ${msg.senderId === currentUser?._id ? "sent" : "received"}`}
+                      >
+                        <div className="message-bubble">
+                          {msg.text}
+                          <div className="message-info">
+                            <span className="message-time">
+                              {msg.createdAt && !isNaN(new Date(msg.createdAt)) 
+                                ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                : 'Just now'}
+                            </span>
+                            {msg.senderId === currentUser?._id && (
+                              <span className={`message-tick ${msg.seen ? 'seen' : ''}`}>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                  <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
+                                </svg>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+                {typingData.senderId === activeChat._id && typingData.isTyping && (
+                        <div className="message-wrapper received">
+                          <div className="message-bubble">
+                            Typing ...
+                          </div>
+                        </div>
+                      )}
+              </div>
             <div className="message-input-container">
               <form className="message-form" onSubmit={handleSendMessage}>
                 <input
@@ -153,9 +297,7 @@ const Chat = ({onlineUsers}) => {
                   className="message-input"
                   placeholder="Type a message..."
                   value={newMessage}
-                  onChange={(e) => {
-                    setNewMessage(e.target.value)
-                  }}
+                  onChange={handleTyping}
                 />
                 <button type="submit" className="send-btn" disabled={!newMessage.trim()}>
                   <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">

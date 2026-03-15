@@ -18,6 +18,12 @@ import Chat from "./components/Chat/Chat";
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [typingData, setTypingData] = useState({
+    senderId: ""
+  });
+  const [messageSeenData, setMessageSeenData] = useState({
+    receiverId: ""
+  });
   useEffect(() => {
     // Check if user is logged in on app load
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -41,6 +47,26 @@ function App() {
 
     return () => {
       socket.off("onlineUsers");
+    };
+  }, []);
+
+  useEffect(() => {
+    socket.on("typing", (data) => {
+      setTypingData(data);
+    });
+
+    socket.on("stopTyping", (data) => {
+      setTypingData(data);
+    });
+
+    socket.on("messageSeen", (data) => {
+      setMessageSeenData(data);
+    });
+
+    return () => {
+      socket.off("typing");
+      socket.off("stopTyping");
+      socket.off("messageSeen");
     };
   }, []);
   return (
@@ -112,7 +138,7 @@ function App() {
       element={
         <ProtectedRoutes>
           <Layout>
-            <Chat onlineUsers={onlineUsers}/>
+            <Chat onlineUsers={onlineUsers} typingData={typingData} messageSeenData={messageSeenData}/>
           </Layout>
         </ProtectedRoutes>
       }
