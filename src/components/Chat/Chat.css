@@ -83,7 +83,6 @@
 .chat-item-last-msg {
   display: block;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -313,6 +312,16 @@
   height: 10px;
   border-radius: 50%;
   background-color: #00FF00;
+  margin-left: 10px;
+}
+
+.unseen-indicator {
+  background-color: #00FF00;
+  color: #000;
+  border-radius: 50%;
+  padding: 6px 6px;
+  font-size: 0.75rem;
+  font-weight: bold;
   margin-left: 10px;
 }
 

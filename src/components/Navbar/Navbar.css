@@ -207,3 +207,35 @@
     width: 100%;
   }
 }
+
+/* Unseen Messages Badge Styling */
+.messages-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.unseen-badge {
+  position: absolute;
+  top: -4px;
+  right: -12px;
+  background-color: #ef4444; /* bright red */
+  color: white;
+  font-size: 0.70rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 12px;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}

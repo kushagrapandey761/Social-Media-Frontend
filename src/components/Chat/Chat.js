@@ -41,6 +41,8 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
   const [currentUser, setCurrentUser] = useState(null);
   const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const [unseenUsers, setUnseenUsers] = useState([]);
+  const [lastMessages, setLastMessages] = useState([]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -92,38 +94,49 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
 
   useEffect(() => {
 
-  const handleReceiveMessage = (message) => {
+    const handleReceiveMessage = (message) => {
+      if (!currentUser) return;
 
-    if (!activeChat || !currentUser) return;
+      const isFromActiveChat = activeChat && String(message.senderId) === String(activeChat._id);
 
-    const isFromActiveChat =
-      String(message.senderId) === String(activeChat._id);
+      if (isFromActiveChat) {
+        // Add message to UI and mark as seen immediately
+        setMessages(prev => [...prev, { ...message, seen: true }]);
+        
+        setLastMessages(prev => {
+          const exists = prev.some(item => String(item._id) === String(activeChat._id));
+          if (exists) {
+            return prev.map(item => 
+              String(item._id) === String(activeChat._id) ? { ...item, lastMessage: message } : item
+            );
+          }
+          return [...prev, { _id: activeChat._id, lastMessage: message }];
+        });
 
-    if (isFromActiveChat) {
+        socket.emit("messageSeen", {
+          senderId: message.senderId
+        });
+      } else {
+        // Update last message for the sender's chat (and don't push to active chat's messages)
+        setLastMessages(prev => {
+          const exists = prev.some(item => String(item._id) === String(message.senderId));
+          if (exists) {
+            return prev.map(item => 
+              String(item._id) === String(message.senderId) ? { ...item, lastMessage: message } : item
+            );
+          }
+          return [...prev, { _id: message.senderId, lastMessage: message }];
+        });
+      }
+    };
 
-      // Add message to UI and mark as seen immediately
-      setMessages(prev => [...prev, { ...message, seen: true }]);
+    socket.on("receiveMessage", handleReceiveMessage);
 
-      socket.emit("messageSeen", {
-        senderId: message.senderId
-      });
+    return () => {
+      socket.off("receiveMessage", handleReceiveMessage);
+    };
 
-    } else {
-
-      // message from another chat
-      setMessages(prev => [...prev, message]);
-
-    }
-
-  };
-
-  socket.on("receiveMessage", handleReceiveMessage);
-
-  return () => {
-    socket.off("receiveMessage", handleReceiveMessage);
-  };
-
-}, [activeChat, currentUser]);
+  }, [activeChat, currentUser]);
 
   // Updating messages when the other user has seen them
   useEffect(() => {
@@ -157,6 +170,31 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
     }
   }, [activeChat, messages, currentUser]);
 
+  useEffect(() => {
+    async function getUnseenUsers(){
+      const data = await api.getUnseenUsers();
+      if (data && data.senderIds) {
+        const uniqueSenderIds = [...new Set(data.senderIds.map(item => String(item.senderId)))];
+        setUnseenUsers(uniqueSenderIds);
+      } else {
+        setUnseenUsers([]);
+      }
+    }
+    getUnseenUsers();
+  }, []);
+
+  useEffect(() => {
+    async function getLastMessages(){
+      const data = await api.getLastMessages();
+      if (data && data.conversations) {
+        setLastMessages(data.conversations);
+      } else {
+        setLastMessages([]);
+      }
+    }
+    getLastMessages();
+  }, []);
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeChat || !currentUser) return;
@@ -166,10 +204,25 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
       text: newMessage,
     };
 
-
     // Optimistic UI update
-    setMessages((prev) => [...prev, {...messageData, senderId: currentUser._id}]);
+    const optimisticMessage = {
+      ...messageData, 
+      senderId: currentUser._id,
+      createdAt: new Date().toISOString()
+    };
     
+    setMessages((prev) => [...prev, optimisticMessage]);
+    
+    setLastMessages(prev => {
+      const exists = prev.some(item => String(item._id) === String(activeChat._id));
+      if (exists) {
+        return prev.map(item => 
+          String(item._id) === String(activeChat._id) ? { ...item, lastMessage: optimisticMessage } : item
+        );
+      }
+      return [...prev, { _id: activeChat._id, lastMessage: optimisticMessage }];
+    });
+
     await api.sendMessage(messageData);
     
     setNewMessage("");
@@ -190,6 +243,7 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
 
   const handleSetActiveChat = (user) => {
     setActiveChat(user);
+    setUnseenUsers(prev => prev.filter(id => id !== user._id));
   }
 
   return (
@@ -210,8 +264,11 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
               </div>
               <div className="chat-item-info">
                 <span className="chat-item-name">{user.username}</span>
-                <span className="chat-item-last-msg">Click to start chatting</span>
+                <span style={{color: unseenUsers.includes(user._id) ? "#00FF00" : "rgba(255, 255, 255, 0.6)"}} className="chat-item-last-msg">{lastMessages.find(msg => msg._id === user._id)?.lastMessage.text}</span>
               </div>
+              {unseenUsers.includes(user._id) && (
+                <span className="unseen-indicator"></span>
+              )}
             </div>
           ))}
         </div>

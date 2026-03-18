@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
 import './Navbar.css';
+import socket from '../../socket';
+import { api } from '../../services/api';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unseenCount, setUnseenCount] = useState(0);
   const location = useLocation();
 
   // Handle scroll effect for glassmorphism
@@ -14,6 +17,35 @@ const Navbar = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Fetch initial unseen messages count & listen to socket events
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (isLoggedIn) {
+      api.getUnseenMessagesCount()
+        .then(data => setUnseenCount(data.count))
+        .catch(err => console.error("Error fetching unseen count:", err));
+    }
+
+    const handleMessageSeen = (countToSubtract) => {
+      setUnseenCount(prev => Math.max(0, prev - countToSubtract));
+    };
+
+    const handleReceiveMessage = (message) => {
+      // If user isn't actively reading this exact chat, bump unseen
+      if (window.location.pathname !== '/chat') {
+        setUnseenCount(prev => prev + 1);
+      }
+    };
+
+    socket.on("messagesMarkedAsSeen", handleMessageSeen);
+    socket.on("receiveMessage", handleReceiveMessage);
+
+    return () => {
+      socket.off("messagesMarkedAsSeen", handleMessageSeen);
+      socket.off("receiveMessage", handleReceiveMessage);
+    };
   }, []);
 
   // Close mobile menu on route change
@@ -32,7 +64,10 @@ const Navbar = () => {
         <div className="navbar-menu">
           <Link to="/" className="nav-link">Feed</Link>
           <Link to="/users" className="nav-link">Users</Link>
-          <Link to="/chat" className="nav-link">Messages</Link>
+          <Link to="/chat" className="nav-link messages-link">
+            Messages
+            {unseenCount > 0 && <span className="unseen-badge">{unseenCount > 99 ? '99+' : unseenCount}</span>}
+          </Link>
           <Link to="/profile" className="nav-link">Profile</Link>
         </div>
 
@@ -52,11 +87,14 @@ const Navbar = () => {
       <div className={`mobile-menu ${mobileMenuOpen ? 'active' : ''}`}>
         <Link to="/" className="mobile-link">Feed</Link>
         <Link to="/users" className="mobile-link">Users</Link>
-        <Link to="/chat" className="mobile-link">Messages</Link>
+        <Link to="/chat" className="mobile-link messages-link">
+          Messages
+          {unseenCount > 0 && <span className="unseen-badge">{unseenCount > 99 ? '99+' : unseenCount}</span>}
+        </Link>
         <Link to="/profile" className="mobile-link">Profile</Link>
         <div className="mobile-actions">
-          <Link to="/login" className="btn-secondary mobile-btn">Log In</Link>
-          <Link to="/register" className="btn-primary mobile-btn">Sign Up</Link>
+           <Link to="/login" className="btn-secondary mobile-btn">Log In</Link>
+           <Link to="/register" className="btn-primary mobile-btn">Sign Up</Link>
         </div>
       </div>
     </nav>

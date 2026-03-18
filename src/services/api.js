@@ -259,6 +259,39 @@ export const api = {
     return await res.json();
   },
 
+  getUnseenMessagesCount: async () => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/messages/unseen/count`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch unseen messages count');
+    }
+    return await res.json();
+  },
+
+  getUnseenUsers: async () => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/messages/unseen/users`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch unseen users');
+    }
+    return await res.json();
+  },
+
+  getLastMessages: async () => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/messages/lastMessages`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch last messages');
+    }
+    return await res.json();
+  },
+
   sendMessage: async (messageData) => {
     const res = await fetch(`${process.env.REACT_APP_BASE_URL}/sendMessage`, {
       method: "POST",
