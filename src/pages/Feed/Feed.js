@@ -63,39 +63,7 @@ const Feed = () => {
         </div>
       </div>
       
-      <div className="feed-sidebar">
-        <div className="sidebar-widget glass-panel">
-          <h3>Trending Topics</h3>
-          <ul className="trending-list">
-            <li>#ReactJS</li>
-            <li>#WebDevelopment</li>
-            <li>#UIUX</li>
-            <li>#Frontend</li>
-          </ul>
-        </div>
-        
-        <div className="sidebar-widget glass-panel">
-          <h3>Suggested Users</h3>
-          <div className="suggested-users">
-            <div className="suggested-user">
-              <div className="suggested-avatar">M</div>
-              <div className="suggested-info">
-                <span className="name">Max Design</span>
-                <span className="handle">@maxdesign</span>
-              </div>
-              <button className="btn-secondary follow-btn">Follow</button>
-            </div>
-            <div className="suggested-user">
-              <div className="suggested-avatar">S</div>
-              <div className="suggested-info">
-                <span className="name">Sarah Code</span>
-                <span className="handle">@sarahcode</span>
-              </div>
-              <button className="btn-secondary follow-btn">Follow</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </div>
   );
 };

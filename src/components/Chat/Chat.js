@@ -127,6 +127,13 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
           }
           return [...prev, { _id: message.senderId, lastMessage: message }];
         });
+
+        setUnseenUsers(prev => {
+          if (!prev.includes(String(message.senderId))) {
+            return [...prev, String(message.senderId)];
+          }
+          return prev;
+        });
       }
     };
 

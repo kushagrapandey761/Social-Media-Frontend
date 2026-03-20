@@ -34,9 +34,7 @@ const Navbar = () => {
 
     const handleReceiveMessage = (message) => {
       // If user isn't actively reading this exact chat, bump unseen
-      if (window.location.pathname !== '/chat') {
-        setUnseenCount(prev => prev + 1);
-      }
+      setUnseenCount(prev => prev + 1);
     };
 
     socket.on("messagesMarkedAsSeen", handleMessageSeen);
