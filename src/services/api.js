@@ -304,4 +304,32 @@ export const api = {
     }
     return await res.json();
   },
+
+  forgotPassword: async (email) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+      credentials: "include"
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to send reset email');
+    }
+    return data;
+  },
+
+  resetPassword: async (token, newPassword) => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/reset-password/${token}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: newPassword }),
+      credentials: "include"
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to reset password');
+    }
+    return data;
+  },
 };

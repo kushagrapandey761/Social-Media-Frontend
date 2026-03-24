@@ -16,6 +16,8 @@ import PostCard from "./components/PostCard/PostCard";
 import socket from "./socket";
 import Chat from "./components/Chat/Chat";
 import { api } from "./services/api";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -139,6 +141,8 @@ function App() {
         {/* Public Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
 
       {/* Protected Routes - Wrapped with ProtectedRoutes */}
       <Route
