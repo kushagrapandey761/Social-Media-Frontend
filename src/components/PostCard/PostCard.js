@@ -298,7 +298,7 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted, mediaIndex, i
   return (
     <div className="post-card glass-panel animate-fade-in">
       <div className="post-header">
-        <Link to={`/user/${post.authorId}`} className="post-author-info">
+        <Link to={`/profile/${post.authorId}`} className="post-author-info">
           <div
             className="author-avatar"
             style={{ backgroundImage: `url(${post.userAvatar})` }}
