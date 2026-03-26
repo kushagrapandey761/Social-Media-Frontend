@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import "./Chat.css";
 import socket from "../../socket";
 import { api } from "../../services/api";
+import PostCard from "../PostCard/PostCard";
 
 const getCompareDate = (m) => m && m.createdAt ? new Date(m.createdAt).toDateString() : new Date().toDateString();
 
@@ -34,6 +36,7 @@ const formatDateLabel = (dateString) => {
 };
 
 const Chat = ({onlineUsers, typingData, messageSeenData}) => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -209,6 +212,8 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
     const messageData = {
       receiverId: activeChat._id,
       text: newMessage,
+      type: "text",
+      currentMediaIndex: null
     };
 
     // Optimistic UI update
@@ -271,7 +276,11 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
               </div>
               <div className="chat-item-info">
                 <span className="chat-item-name">{user.username}</span>
-                <span style={{color: unseenUsers.includes(user._id) ? "#00FF00" : "rgba(255, 255, 255, 0.6)"}} className="chat-item-last-msg">{lastMessages.find(msg => msg._id === user._id)?.lastMessage.text}</span>
+                <span style={{color: unseenUsers.includes(user._id) ? "#00FF00" : "rgba(255, 255, 255, 0.6)"}} className="chat-item-last-msg">
+                  {lastMessages.find(msg => msg._id === user._id)?.lastMessage?.type === "post" 
+                    ? "Shared a post" 
+                    : lastMessages.find(msg => msg._id === user._id)?.lastMessage?.text}
+                </span>
               </div>
               {unseenUsers.includes(user._id) && (
                 <span className="unseen-indicator"></span>
@@ -306,9 +315,19 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
                       <div
                         className={`message-wrapper ${msg.senderId === currentUser?._id ? "sent" : "received"}`}
                       >
-                        <div className="message-bubble">
-                          {msg.text}
-                          <div className="message-info">
+                        <div className="message-bubble" style={msg.type === "post" ? { padding: '0', background: 'transparent', boxShadow: 'none' } : {}}>
+                          {msg.type === "post" && msg.postId ? (
+                            <div className="shared-postcard-wrapper" onClick={(e) => {
+                               // verify it's not a button or link being clicked inside
+                               if(e.target.closest('button') || e.target.closest('a')) return;
+                               navigate(`/post/${msg.postId._id}/${msg.currentMediaIndex}`);
+                            }}>
+                               <PostCard mediaIndex={msg.currentMediaIndex} post={msg.postId} isChat={true} />
+                            </div>
+                          ) : (
+                            msg.text
+                          )}
+                          <div className="message-info" style={msg.type === "post" ? { background: 'rgba(0,0,0,0.5)', padding: '2px 8px', borderRadius: '10px', display: 'inline-flex', marginTop: '4px' } : {}}>
                             <span className="message-time">
                               {msg.createdAt && !isNaN(new Date(msg.createdAt)) 
                                 ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })

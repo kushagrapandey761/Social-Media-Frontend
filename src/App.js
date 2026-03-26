@@ -193,11 +193,11 @@ function App() {
         }
       />
       <Route
-      path="/post/:id"
+      path="/post/:id/:urlMediaIndex"
       element={
         <ProtectedRoutes>
           <Layout>
-            <PostCard />
+            <PostCard isChat={false} />
           </Layout>
         </ProtectedRoutes>
       }

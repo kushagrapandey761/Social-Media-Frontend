@@ -259,6 +259,7 @@ const Profile = () => {
                     post={post}
                     isUsersPost={id ? false : true}
                     onPostDeleted={() => onPostDeleted(post._id)}
+                    isChat={false}
                   />
                 ))
               ) : (

@@ -3,16 +3,17 @@ import { Link, useParams } from "react-router";
 import "./PostCard.css";
 import { api } from "../../services/api";
 import Modal from "../Modal/Modal";
+import toast from "react-hot-toast";
 
-const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
-  const {id} = useParams();
+const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted, mediaIndex, isChat = false }) => {
+  const {id, urlMediaIndex} = useParams();
   const [post, setPost] = useState(initialPost || null);
   const [loadingPost, setLoadingPost] = useState(!initialPost && !!id);
   const [postError, setPostError] = useState(null);
 
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(initialPost?.likes || 0);
-  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(mediaIndex || 0);
   const [isPostOptionsOpen, setIsPostOptionsOpen] = useState(false);
   const [loader, setLoader] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -23,9 +24,15 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
   const [addingComment, setAddingComment] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null); // Tracks the comment _id being replied to
+  
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareUsers, setShareUsers] = useState([]);
+  const [selectedShareUsers, setSelectedShareUsers] = useState([]);
+  const [sharingPost, setSharingPost] = useState(false);
 
   useEffect(() => {
     if (id && !initialPost) {
+      setCurrentMediaIndex(parseInt(urlMediaIndex, 10) || 0);
       const fetchPost = async () => {
         try {
           setLoadingPost(true);
@@ -45,7 +52,7 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
       setPost(initialPost);
       setLikeCount(initialPost.likes || 0);
     }
-  }, [id, initialPost]);
+  }, [id, initialPost, urlMediaIndex]);
 
   const toggleReplies = async (commentId) => {
     if (!expandedReplies[commentId]) {
@@ -237,7 +244,7 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
   }
 
   const hasMedia = post.media && post.media.length > 0;
-  const isCarousel = hasMedia && post.media.length > 1;
+  const isCarousel = hasMedia && post.media.length > 1 && !isChat;
 
   const nextMedia = () => {
     setCurrentMediaIndex((prev) =>
@@ -249,6 +256,43 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
     setCurrentMediaIndex((prev) =>
       prev === 0 ? post.media.length - 1 : prev - 1,
     );
+  };
+
+  const handleShareClick = async () => {
+    setIsShareModalOpen(true);
+    if (shareUsers.length === 0) {
+      try {
+        const loggedInUser = JSON.parse(localStorage.getItem("LoggedInuserDetails"));
+        const allUsers = await api.getAllUsers();
+        setShareUsers(allUsers.filter(u => u._id !== loggedInUser._id));
+      } catch (err) {
+        console.error("Failed to fetch users for sharing", err);
+      }
+    }
+  };
+
+  const handleSendShare = async () => {
+    if (selectedShareUsers.length === 0) return;
+    setSharingPost(true);
+    
+    try {
+      for (const userId of selectedShareUsers) {
+         await api.sendMessage({
+           receiverId: userId,
+           type: "post",
+           postId: post._id,
+           currentMediaIndex
+         });
+      }
+      toast.success("Post shared successfully!")
+      setIsShareModalOpen(false);
+      setSelectedShareUsers([]);
+    } catch (err) {
+      console.error("Failed to share post", err);
+      toast.error("Failed to share post");
+    } finally {
+      setSharingPost(false);
+    }
   };
 
   return (
@@ -339,6 +383,62 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
             </div>
           </div>
         </Modal>
+
+        <Modal
+          isOpen={isShareModalOpen}
+          onClose={() => {
+            setIsShareModalOpen(false);
+            setSelectedShareUsers([]);
+          }}
+        >
+          <div className="share-modal-container">
+            <h3>Share this Post</h3>
+            <div className="share-users-list">
+              {shareUsers.length === 0 ? (
+                <p>Loading users...</p>
+              ) : (
+                shareUsers.map(user => (
+                  <label key={user._id} className="share-user-item">
+                    <input 
+                      type="checkbox" 
+                      className="share-checkbox"
+                      checked={selectedShareUsers.includes(user._id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedShareUsers(prev => [...prev, user._id]);
+                        } else {
+                          setSelectedShareUsers(prev => prev.filter(id => id !== user._id));
+                        }
+                      }}
+                    />
+                    <div className="share-user-avatar">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="share-user-name">{user.username}</span>
+                  </label>
+                ))
+              )}
+            </div>
+            <div className="share-actions">
+              <button 
+                className="btn-secondary"
+                onClick={() => {
+                  setIsShareModalOpen(false);
+                  setSelectedShareUsers([]);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={handleSendShare} 
+                disabled={selectedShareUsers.length === 0 || sharingPost}
+              >
+                {sharingPost ? "Sharing..." : "Send"}
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
 
       <div className="post-content">
@@ -354,7 +454,7 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
                 />
               )}
               {post.media[currentMediaIndex].type === "video" && (
-                <video controls className="post-video">
+                <video controls={!isChat} className="post-video">
                   <source
                     src={post.media[currentMediaIndex].url}
                     type="video/mp4"
@@ -414,6 +514,8 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
         )}
       </div>
 
+      {!isChat && (
+        <>
       <div className="post-actions-bar">
         <button
           className={`interaction-btn ${liked ? "liked" : ""}`}
@@ -446,7 +548,7 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
           <span>{post.commentsCount || 0}</span>
         </button>
 
-        <button className="interaction-btn">
+        <button className="interaction-btn" onClick={handleShareClick}>
           <svg
             width="20"
             height="20"
@@ -588,6 +690,8 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted }) => {
             </form>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

@@ -6,7 +6,6 @@
  * body of each function with a real fetch() or axios.get/post() call.
  */
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const api = {
   // Authentication
@@ -70,21 +69,6 @@ export const api = {
       throw new Error('Failed to create post');
     }
     return await res.json();
-  },
-  
-  // Users
-  getUsers: async () => {
-    await delay(600);
-    return [
-      {
-        id: 'u1', username: 'Anna Smith', handle: '@annasmith',
-        bio: 'Digital nomad and photographer.', isFollowing: false
-      },
-      {
-        id: 'u2', username: 'Devon Miles', handle: '@devonm',
-        bio: 'Software engineer building web things.', isFollowing: true
-      }
-    ];
   },
   
   getUserProfile: async (userId) => {

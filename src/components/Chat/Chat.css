@@ -339,3 +339,20 @@
   color: #fff;
   border-bottom-left-radius: 4px;
 }
+
+/* Shared PostCard Wrapper in Chat */
+.shared-postcard-wrapper {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  min-width: 280px;
+}
+
+.shared-postcard-wrapper:hover {
+  transform: scale(1.02);
+}
+
+.shared-postcard-wrapper .post-card {
+  margin-bottom: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.4);
+}
