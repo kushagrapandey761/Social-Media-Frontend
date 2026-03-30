@@ -264,7 +264,7 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted, mediaIndex, i
       try {
         const loggedInUser = JSON.parse(localStorage.getItem("LoggedInuserDetails"));
         const allUsers = await api.getAllUsers();
-        setShareUsers(allUsers.filter(u => u._id !== loggedInUser._id));
+        setShareUsers(allUsers.filter(u => u._id !== loggedInUser._id && u.isFollowing));
       } catch (err) {
         console.error("Failed to fetch users for sharing", err);
       }
