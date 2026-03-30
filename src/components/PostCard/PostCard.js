@@ -186,6 +186,13 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted, mediaIndex, i
         const added = data.comment || data;
         setComments((prev) => [added, ...prev]);
       }
+      
+      // Optimistically update the post's comment count in local state
+      setPost((prev) => ({
+        ...prev,
+        commentsCount: (prev?.commentsCount || 0) + 1
+      }));
+      
       setNewComment("");
       setReplyingTo(null);
     } catch (error) {
