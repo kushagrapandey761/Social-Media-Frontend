@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import "./App.css";
 import { Toaster, toast } from 'react-hot-toast';
+import { useNavigate } from "react-router-dom";
 
 // Components
 import Layout from "./components/Layout/Layout";
@@ -20,6 +21,7 @@ import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 
 function App() {
+  const navigate = useNavigate();
   const [loggedIn, setLoggedIn] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingData, setTypingData] = useState({
@@ -77,10 +79,10 @@ function App() {
               (t) => (
                 <div 
                   style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%", cursor: "pointer" }} 
-                  onClick={() => toast.dismiss(t.id)}
+                  onClick={() => navigate(`/chat/${user._id}`)}
                 >
                   <img 
-                    src={user?.profilePicture || user?.userAvatar || 'https://via.placeholder.com/44'} 
+                    src={user?.userAvatar || 'https://res.cloudinary.com/dov8y0g7e/image/upload/v1775284848/userAvatar/default-profile-account-unknown-icon-black-silhouette-free-vector_phmoxc.webp'} 
                     alt="Avatar" 
                     style={{ width: "44px", height: "44px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} 
                   />
@@ -204,6 +206,16 @@ function App() {
       />
       <Route
       path="/chat"
+      element={
+        <ProtectedRoutes>
+          <Layout>
+            <Chat onlineUsers={onlineUsers} typingData={typingData} messageSeenData={messageSeenData}/>
+          </Layout>
+        </ProtectedRoutes>
+      }
+      />
+      <Route
+      path="/chat/:userId"
       element={
         <ProtectedRoutes>
           <Layout>

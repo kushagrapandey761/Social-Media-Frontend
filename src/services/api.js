@@ -8,14 +8,18 @@
 
 
 export const api = {
-  // Authentication
   login: async (credentials) => {
-    await fetch(`${process.env.REACT_APP_BASE_URL}/login`, {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
       credentials: "include"
-    }).then((res) => res.json());
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+    return data;
   },
   
   register: async (userData) => {

@@ -402,7 +402,7 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted, mediaIndex, i
             <h3>Share this Post</h3>
             <div className="share-users-list">
               {shareUsers.length === 0 ? (
-                <p>Loading users...</p>
+                <p>Follow users to share posts</p>
               ) : (
                 shareUsers.map(user => (
                   <label key={user._id} className="share-user-item">

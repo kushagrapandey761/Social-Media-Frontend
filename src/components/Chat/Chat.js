@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import "./Chat.css";
 import socket from "../../socket";
 import { api } from "../../services/api";
@@ -36,6 +36,7 @@ const formatDateLabel = (dateString) => {
 };
 
 const Chat = ({onlineUsers, typingData, messageSeenData}) => {
+  const { userId } = useParams();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
@@ -57,6 +58,12 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (userId) {
+      setActiveChat(users.find(u => u._id === userId));
+    }
+  }, [userId, users]);
 
   useEffect(() => {
     // Fetch logged in user and all users
