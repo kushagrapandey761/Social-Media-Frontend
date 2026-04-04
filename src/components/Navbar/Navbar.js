@@ -9,6 +9,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unseenCount, setUnseenCount] = useState(0);
   const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Handle scroll effect for glassmorphism
   useEffect(() => {
@@ -22,6 +23,7 @@ const Navbar = () => {
   // Fetch initial unseen messages count & listen to socket events
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    setIsLoggedIn(isLoggedIn);
     if (isLoggedIn) {
       api.getUnseenMessagesCount()
         .then(data => setUnseenCount(data.count))
@@ -90,10 +92,12 @@ const Navbar = () => {
           {unseenCount > 0 && <span className="unseen-badge">{unseenCount > 99 ? '99+' : unseenCount}</span>}
         </Link>
         <Link to="/profile" className="mobile-link">Profile</Link>
-        <div className="mobile-actions">
-           <Link to="/login" className="btn-secondary mobile-btn">Log In</Link>
-           <Link to="/register" className="btn-primary mobile-btn">Sign Up</Link>
-        </div>
+        {!isLoggedIn && (
+            <div className="mobile-actions">
+            <Link to="/login" className="btn-secondary mobile-btn">Log In</Link>
+            <Link to="/register" className="btn-primary mobile-btn">Sign Up</Link>
+          </div>
+        )}
       </div>
     </nav>
   );
