@@ -98,7 +98,7 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted, mediaIndex, i
       setLiked(false);
     }
     setLikeCount(post.likes || 0);
-  }, [post?._id, post?.likedBy, post?.likes]);
+  }, [post, post?._id, post?.likedBy, post?.likes]);
 
   // close the options menu when clicking anywhere outside of it
   const optionsRef = React.useRef(null);
