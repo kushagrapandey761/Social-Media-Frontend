@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router";
+import { Route, Routes } from "react-router";
 import "./App.css";
 import { Toaster, toast } from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
@@ -124,7 +124,7 @@ function App() {
       socket.off("messageSeen");
       socket.off("receiveMessage");
     };
-  }, []);
+  });
 
   return (
     <>

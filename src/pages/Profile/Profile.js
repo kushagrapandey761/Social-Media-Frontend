@@ -108,7 +108,7 @@ const Profile = () => {
       setProfile(userDetails);
       fetchUserPosts(userDetails?._id);
       setLoading(false);
-  }}, [id, profile?.userAvatar,profile?.name, profile?.username]);
+  }}, [id, profile?.userAvatar,profile?.name, profile?.username, navigate]);
 
   if (loading) {
     return (
