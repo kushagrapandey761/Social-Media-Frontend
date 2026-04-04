@@ -57,19 +57,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    socket.on("typing", (data) => {
-      setTypingData(data);
-    });
-
-    socket.on("stopTyping", (data) => {
-      setTypingData(data);
-    });
-
-    socket.on("messageSeen", (data) => {
-      setMessageSeenData(data);
-    });
-
-    socket.on("receiveMessage", (message) => {
+    const handleTyping = (data) => setTypingData(data);
+    const handleStopTyping = (data) => setTypingData(data);
+    const handleMessageSeen = (data) => setMessageSeenData(data);
+    const handleReceiveMessage = (message) => {
       // Don't show toast if user is already in chat and actively reading this message
       
       // if (window.location.pathname !== '/chat') {
@@ -116,15 +107,20 @@ function App() {
             console.error("Failed to load user for notification");
           });
       // }
-    });
+    };
+
+    socket.on("typing", handleTyping);
+    socket.on("stopTyping", handleStopTyping);
+    socket.on("messageSeen", handleMessageSeen);
+    socket.on("receiveMessage", handleReceiveMessage);
 
     return () => {
-      socket.off("typing");
-      socket.off("stopTyping");
-      socket.off("messageSeen");
-      socket.off("receiveMessage");
+      socket.off("typing", handleTyping);
+      socket.off("stopTyping", handleStopTyping);
+      socket.off("messageSeen", handleMessageSeen);
+      socket.off("receiveMessage", handleReceiveMessage);
     };
-  });
+  }, [navigate]);
 
   return (
     <>
