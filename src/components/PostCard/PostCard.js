@@ -202,24 +202,41 @@ const PostCard = ({ post: initialPost, isUsersPost, onPostDeleted, mediaIndex, i
     }
   };
 
-  const handleLike = async () => {
+  const likeClicksRef = React.useRef(0);
+  const likeTimeoutRef = React.useRef(null);
+
+  const handleLike = () => {
+    // Optimistic UI update
     if (liked) {
       setLikeCount((prev) => prev - 1);
       setLiked(false);
-      try {
-        await api.toggleLike(post._id); // Assuming this toggles like status
-      } catch (error) {
-        console.error("Error unliking post:", error);
-      }
     } else {
       setLikeCount((prev) => prev + 1);
       setLiked(true);
-      try {
-        await api.toggleLike(post._id);
-      } catch (error) {
-        console.error("Error liking post:", error);
-      }
     }
+
+    // Increment click counter
+    likeClicksRef.current += 1;
+
+    // Clear previous timeout
+    if (likeTimeoutRef.current) {
+      clearTimeout(likeTimeoutRef.current);
+    }
+
+    // Set new debounce timeout
+    likeTimeoutRef.current = setTimeout(async () => {
+      // Only send request if the net change is a toggle (odd number of clicks)
+      // This prevents the backend and frontend from desyncing if user clicks rapidly
+      if (likeClicksRef.current % 2 !== 0) {
+        try {
+          await api.toggleLike(post._id);
+        } catch (error) {
+          console.error("Error toggling like:", error);
+        }
+      }
+      // Reset the counter after the window ends
+      likeClicksRef.current = 0;
+    }, 500); // 500ms debounce window
   };
 
   // Format date helper (mocked implementation)
