@@ -145,3 +145,36 @@
 .error-message{
   color: red;
 }
+
+@media (max-width: 768px) {
+  .auth-card {
+    margin-top: 35%;
+    padding: var(--space-md);
+  }
+
+  .auth-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .auth-header p {
+    font-size: 0.8rem;
+  }
+
+  .form-group input {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .form-options {
+    font-size: 0.8rem;
+  }
+
+  .auth-submit {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .auth-footer {
+    font-size: 0.8rem;
+  }
+}

@@ -45,29 +45,17 @@
   color: var(--primary-color);
 }
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
+.logo-image {
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  object-fit: cover;
   box-shadow: var(--shadow-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
+  transition: transform var(--transition-normal);
 }
 
-.logo-icon::after {
-  content: '';
-  position: absolute;
-  top: 20%;
-  left: 20%;
-  right: 20%;
-  bottom: 20%;
-  background: var(--bg-surface);
-  border-radius: 4px;
-  opacity: 0.9;
+.navbar-logo:hover .logo-image {
+  transform: scale(1.05) rotate(-5deg);
 }
 
 .navbar-menu {
