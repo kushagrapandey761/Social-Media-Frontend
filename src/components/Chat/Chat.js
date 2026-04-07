@@ -278,15 +278,15 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
               className={`chat-item ${activeChat?._id === user._id ? "active" : ""}`}
               onClick={() => handleSetActiveChat(user)}
             >
-              <div className="chat-item-avatar">
-                {user.username.charAt(0).toUpperCase()}
+              <div className="chat-item-avatar" style={user.userAvatar ? { backgroundImage: `url(${user.userAvatar})` } : {}}>
+                {!user.userAvatar && user.username.charAt(0).toUpperCase()}
               </div>
               <div className="chat-item-info">
-                <span className="chat-item-name">{user.username}</span>
+                <span className="chat-item-name">{user.username.length > 20 ? user.username.slice(0, 20) + "..." : user.username}</span>
                 <span style={{color: unseenUsers.includes(user._id) ? "#00FF00" : "rgba(255, 255, 255, 0.6)"}} className="chat-item-last-msg">
                   {lastMessages.find(msg => msg._id === user._id)?.lastMessage?.type === "post" 
                     ? "Shared a post" 
-                    : lastMessages.find(msg => msg._id === user._id)?.lastMessage?.text}
+                    : lastMessages.find(msg => msg._id === user._id)?.lastMessage?.text.length > 20 ? lastMessages.find(msg => msg._id === user._id)?.lastMessage?.text.slice(0, 20) + "..." : lastMessages.find(msg => msg._id === user._id)?.lastMessage?.text}
                 </span>
               </div>
               {unseenUsers.includes(user._id) && (
