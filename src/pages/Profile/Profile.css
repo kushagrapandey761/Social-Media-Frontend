@@ -211,31 +211,11 @@
   .profile-cover {
     height: 150px;
   }
-  
-  .profile-avatar {
-    width: 100px;
-    height: 100px;
-    top: -50px;
-  }
 
   .media-list {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
-
-  .profile-actions {
-    flex-direction: column;
-    align-items: flex-end;
-  }
-
-  .logout-btn {
-    width: 43%;
-  }
-
-  .profile-avatar {
-    top: 4%;
-  }
 }
-
 
 @keyframes fadeIn {
   from {
@@ -319,6 +299,39 @@
 
   .media-modal-close:hover {
     background: rgba(0, 0, 0, 0.7);
+  }
+
+  .profile-avatar-container {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-top: 0;
+  }
+
+  .profile-info-section {
+    padding: 0 var(--space-lg) var(--space-lg);
+  }
+
+  .profile-actions {
+    margin-bottom: 0;
+    padding-top: var(--space-md);
+  }
+
+  .logout-btn {
+    width: auto;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+  
+  .profile-avatar {
+    position: relative;
+    top: -40px;
+    left: 0;
+    margin-bottom: -40px;
+    width: 80px;
+    height: 80px;
+    font-size: 2rem;
   }
 }
 

@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router';
 import './Login.css';
 import { api } from '../../services/api';
+import { useLocation } from 'react-router-dom';
 
 const Login = () => {
+  const location = useLocation();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState({email: '', password: ''});
   const [loading, setLoading] = useState(false);
@@ -50,7 +52,7 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div style={{height: location.pathname === "/login" ? "100vh" : "100%"}} className="auth-container">
       <div className="auth-card glass-panel animate-fade-in">
         <div className="auth-header">
           <h2>Welcome Back</h2>

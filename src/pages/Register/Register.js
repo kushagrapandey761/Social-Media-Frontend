@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router';
 // Reuse auth styles
 import './Register.css';
 import { api } from '../../services/api';
+import { useLocation } from 'react-router-dom';
 
 
 const Register = () => {
+  const location = useLocation();
   const [formData, setFormData] = useState({ 
     name: '',
     username: '', 
@@ -93,7 +95,7 @@ const Register = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div style={{height: location.pathname==="/register"?"100vh":"100%"}} className="auth-container">
       <div className="auth-card glass-panel animate-fade-in">
         <div className="auth-header">
           <h2>Create Account</h2>

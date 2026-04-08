@@ -172,6 +172,7 @@ const Profile = () => {
         ></div>
 
         <div className="profile-info-section">
+          <div className="profile-avatar-container">
           <div className="profile-avatar">
             {profile?.userAvatar ? (
               <img src={profile.userAvatar} alt={profile?.username || ""} />
@@ -189,6 +190,7 @@ const Profile = () => {
             <button className="btn-secondary logout-btn" onClick={handleLogout}>
               Logout
             </button>
+          </div>
           </div>
 
           <div className="profile-details">
