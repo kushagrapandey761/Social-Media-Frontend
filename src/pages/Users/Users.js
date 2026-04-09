@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import './Users.css';
 import { api } from '../../services/api';
@@ -19,15 +19,38 @@ const Users = () => {
     fetchUsers();
   }, []);
 
-  const toggleFollow = async (userId) => {
-    await api.toggleFollow(userId);
-    setUsers(users.map(user => 
+  const debounceTimers = useRef({});
+
+  const toggleFollow = (userId) => {
+    // Optimistic UI update
+    setUsers(prevUsers => prevUsers.map(user => 
       user._id === userId 
         ? { ...user, isFollowing: !user.isFollowing } 
         : user
     ));
-    const res = await api.getLoggedInUser();
-    localStorage.setItem('LoggedInuserDetails', JSON.stringify(res));
+
+    // Clear existing timer for this user
+    if (debounceTimers.current[userId]) {
+      clearTimeout(debounceTimers.current[userId]);
+    }
+
+    // Set new timer
+    debounceTimers.current[userId] = setTimeout(async () => {
+      try {
+        await api.toggleFollow(userId);
+        const res = await api.getLoggedInUser();
+        localStorage.setItem('LoggedInuserDetails', JSON.stringify(res));
+      } catch (error) {
+        console.error('Error toggling follow status:', error);
+        // Revert optimistic update on failure
+        setUsers(prevUsers => prevUsers.map(user => 
+          user._id === userId 
+            ? { ...user, isFollowing: !user.isFollowing } 
+            : user
+        ));
+      }
+      delete debounceTimers.current[userId];
+    }, 500); // 500ms debounce
   };
 
   const filteredUsers = users.filter(user => 
