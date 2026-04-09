@@ -99,7 +99,6 @@ const Profile = () => {
         .catch((err) => {
           console.error("Failed to fetch user profile:", err);
           alert("Failed to load profile. Please try again.");
-          navigate("/");
         });
         fetchUserPosts(id);
         setLoading(false);
@@ -108,7 +107,7 @@ const Profile = () => {
       setProfile(userDetails);
       fetchUserPosts(userDetails?._id);
       setLoading(false);
-  }}, [id, profile?.userAvatar,profile?.name, profile?.username, navigate]);
+  }}, [id]);
 
   if (loading) {
     return (
