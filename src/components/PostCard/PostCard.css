@@ -626,3 +626,9 @@
   filter: brightness(1.1);
   transform: translateY(-1px);
 }
+
+@media (max-width: 768px) {
+  .post-card {
+    padding: var(--space-md);
+  }
+}

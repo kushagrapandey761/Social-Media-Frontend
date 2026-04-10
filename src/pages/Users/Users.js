@@ -20,12 +20,24 @@ const Users = () => {
   }, []);
 
   const debounceTimers = useRef({});
+  const initialFollowStates = useRef({}); // Tracks the true backend state before a flurry of clicks
 
   const toggleFollow = (userId) => {
+    const userToToggle = users.find(u => u._id === userId);
+    if (!userToToggle) return;
+
+    const currentUIState = userToToggle.isFollowing;
+    const nextState = !currentUIState;
+
+    // Record the initial state if this is the first click in a rapid sequence
+    if (initialFollowStates.current[userId] === undefined) {
+      initialFollowStates.current[userId] = currentUIState;
+    }
+
     // Optimistic UI update
     setUsers(prevUsers => prevUsers.map(user => 
       user._id === userId 
-        ? { ...user, isFollowing: !user.isFollowing } 
+        ? { ...user, isFollowing: nextState } 
         : user
     ));
 
@@ -36,20 +48,30 @@ const Users = () => {
 
     // Set new timer
     debounceTimers.current[userId] = setTimeout(async () => {
+      const initialState = initialFollowStates.current[userId];
+      
+      // Clean up our refs
+      delete initialFollowStates.current[userId];
+      delete debounceTimers.current[userId];
+
+      // If the final intended state matches the initial true state, the net change is zero. Skip API call.
+      if (initialState === nextState) {
+        return; 
+      }
+
       try {
         await api.toggleFollow(userId);
         const res = await api.getLoggedInUser();
         localStorage.setItem('LoggedInuserDetails', JSON.stringify(res));
       } catch (error) {
         console.error('Error toggling follow status:', error);
-        // Revert optimistic update on failure
+        // Revert optimistic update on failure back to the original true state
         setUsers(prevUsers => prevUsers.map(user => 
           user._id === userId 
-            ? { ...user, isFollowing: !user.isFollowing } 
+            ? { ...user, isFollowing: initialState } 
             : user
         ));
       }
-      delete debounceTimers.current[userId];
     }, 500); // 500ms debounce
   };
 
