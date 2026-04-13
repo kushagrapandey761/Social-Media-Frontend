@@ -60,7 +60,7 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
 
   useEffect(() => {
     if (userId) {
-      setActiveChat(users.find(u => u._id === userId));
+      setActiveChat(users.find(u => u.user._id === userId));
     }
   }, [userId, users]);
 
