@@ -269,16 +269,6 @@ export const api = {
     return await res.json();
   },
 
-  getLastMessages: async () => {
-    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/messages/lastMessages`, {
-      method: "GET",
-      credentials: "include"
-    });
-    if (!res.ok) {
-      throw new Error('Failed to fetch last messages');
-    }
-    return await res.json();
-  },
 
   sendMessage: async (messageData) => {
     const res = await fetch(`${process.env.REACT_APP_BASE_URL}/sendMessage`, {
@@ -319,5 +309,16 @@ export const api = {
       throw new Error(data.message || 'Failed to reset password');
     }
     return data;
+  },
+
+  getChatUsers: async () => {
+    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/chatUsers`, {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch chat users');
+    }
+    return await res.json();
   },
 };

@@ -46,7 +46,6 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
   const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const [unseenUsers, setUnseenUsers] = useState([]);
-  const [lastMessages, setLastMessages] = useState([]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -75,8 +74,8 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
         if (me) {
           setCurrentUser(JSON.parse(me));
         }
-        const allUsers = await api.getAllUsers();
-        setUsers(allUsers.filter(u => u._id !== me._id));
+        const allUsers = await api.getChatUsers();
+        setUsers(allUsers.filter(u => u.user._id !== me._id));
       } catch (err) {
         console.error("Failed to fetch users", err);
       }
@@ -89,7 +88,7 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
       // Fetch message history
       const fetchMessages = async () => {
         try {
-          const history = await api.getMessages(activeChat._id);
+          const history = await api.getMessages(activeChat.user._id);
           setMessages(history);
         } catch (err) {
           console.error("Failed to fetch messages", err);
@@ -98,7 +97,7 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
       fetchMessages();
 
       // Join chat room or notify server of active chat
-      socket.emit("join_chat", { targetId: activeChat._id });
+      socket.emit("join_chat", { targetId: activeChat.user._id });
     }
   }, [activeChat]);
 
@@ -107,36 +106,18 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
     const handleReceiveMessage = (message) => {
       if (!currentUser) return;
 
-      const isFromActiveChat = activeChat && String(message.senderId) === String(activeChat._id);
+      const isFromActiveChat = activeChat && String(message.senderId) === String(activeChat.user._id);
 
       if (isFromActiveChat) {
         // Add message to UI and mark as seen immediately
         setMessages(prev => [...prev, { ...message, seen: true }]);
         
-        setLastMessages(prev => {
-          const exists = prev.some(item => String(item._id) === String(activeChat._id));
-          if (exists) {
-            return prev.map(item => 
-              String(item._id) === String(activeChat._id) ? { ...item, lastMessage: message } : item
-            );
-          }
-          return [...prev, { _id: activeChat._id, lastMessage: message }];
-        });
 
         socket.emit("messageSeen", {
           senderId: message.senderId
         });
       } else {
         // Update last message for the sender's chat (and don't push to active chat's messages)
-        setLastMessages(prev => {
-          const exists = prev.some(item => String(item._id) === String(message.senderId));
-          if (exists) {
-            return prev.map(item => 
-              String(item._id) === String(message.senderId) ? { ...item, lastMessage: message } : item
-            );
-          }
-          return [...prev, { _id: message.senderId, lastMessage: message }];
-        });
 
         setUnseenUsers(prev => {
           if (!prev.includes(String(message.senderId))) {
@@ -145,6 +126,19 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
           return prev;
         });
       }
+
+      setUsers(prev => {
+        const senderId = String(message.senderId);
+        const existingUser = prev.find(item => String(item.user._id) === senderId);
+        
+        if (existingUser) {
+          return [
+            { ...existingUser, lastMessage: message },
+            ...prev.filter(item => String(item.user._id) !== senderId)
+          ];
+        }
+        return prev;
+      });
     };
 
     socket.on("receiveMessage", handleReceiveMessage);
@@ -160,7 +154,7 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
 
     if (!messageSeenData || !activeChat || !currentUser) return;
 
-    if (String(messageSeenData.receiverId) !== String(activeChat._id)) return;
+    if (String(messageSeenData.receiverId) !== String(activeChat.user._id)) return;
 
     setMessages(prev => prev.map(msg => 
       (String(msg.senderId) === String(currentUser._id) && !msg.seen) 
@@ -173,13 +167,13 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
   // Marking messages as seen when you open/read them
   useEffect(() => {
     if (activeChat && currentUser && messages.length > 0) {
-      const hasUnseenMessages = messages.some(msg => msg.senderId === activeChat._id && !msg.seen);
+      const hasUnseenMessages = messages.some(msg => msg.senderId === activeChat.user._id && !msg.seen);
       
       if (hasUnseenMessages) {
-        socket.emit("messageSeen", { senderId: activeChat._id });
+        socket.emit("messageSeen", { senderId: activeChat.user._id });
         
         setMessages(prev => prev.map(msg => 
-          (msg.senderId === activeChat._id && !msg.seen) 
+          (msg.senderId === activeChat.user._id && !msg.seen) 
             ? { ...msg, seen: true } 
             : msg
         ));
@@ -200,24 +194,13 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
     getUnseenUsers();
   }, []);
 
-  useEffect(() => {
-    async function getLastMessages(){
-      const data = await api.getLastMessages();
-      if (data && data.conversations) {
-        setLastMessages(data.conversations);
-      } else {
-        setLastMessages([]);
-      }
-    }
-    getLastMessages();
-  }, []);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeChat || !currentUser) return;
 
     const messageData = {
-      receiverId: activeChat._id,
+      receiverId: activeChat.user._id,
       text: newMessage,
       type: "text",
       currentMediaIndex: null
@@ -232,37 +215,46 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
     
     setMessages((prev) => [...prev, optimisticMessage]);
     
-    setLastMessages(prev => {
-      const exists = prev.some(item => String(item._id) === String(activeChat._id));
-      if (exists) {
-        return prev.map(item => 
-          String(item._id) === String(activeChat._id) ? { ...item, lastMessage: optimisticMessage } : item
-        );
-      }
-      return [...prev, { _id: activeChat._id, lastMessage: optimisticMessage }];
-    });
 
     await api.sendMessage(messageData);
+
+    // Set the user at first position in the users list
+    setUsers(prev=> {
+      const exists = prev.some(item => String(item.user._id) === String(activeChat.user._id));
+      if (exists) {
+        const existingUser = prev.find(item => String(item.user._id) === String(activeChat.user._id));
+        return [
+          { ...existingUser, lastMessage: optimisticMessage },
+          ...prev.filter(item => String(item.user._id) !== String(activeChat.user._id))
+        ];
+      }
+      return [{ user: activeChat.user, lastMessage: optimisticMessage }, ...prev];
+    });
+    
     
     setNewMessage("");
   };
 
+  useEffect(() => {
+    console.log("after users", users)
+  }, [users]);
+
   const handleTyping = (e) => {
     setNewMessage(e.target.value)
-    socket.emit("typing", { receiverId: activeChat._id });
+    socket.emit("typing", { receiverId: activeChat.user._id });
     
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
     
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit("stopTyping", { receiverId: activeChat._id });
+      socket.emit("stopTyping", { receiverId: activeChat.user._id });
     }, 1000);
   }
 
   const handleSetActiveChat = (user) => {
     setActiveChat(user);
-    setUnseenUsers(prev => prev.filter(id => id !== user._id));
+    setUnseenUsers(prev => prev.filter(id => id !== user.user._id));
   }
 
   return (
@@ -274,22 +266,22 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
         <div className="chat-list">
           {users.map((user) => (
             <div
-              key={user._id}
-              className={`chat-item ${activeChat?._id === user._id ? "active" : ""}`}
+              key={user.user._id}
+              className={`chat-item ${activeChat?.user?._id === user.user._id ? "active" : ""}`}
               onClick={() => handleSetActiveChat(user)}
             >
-              <div className="chat-item-avatar" style={user.userAvatar ? { backgroundImage: `url(${user.userAvatar})` } : {}}>
-                {!user.userAvatar && user.username.charAt(0).toUpperCase()}
+              <div className="chat-item-avatar" style={user.user.userAvatar ? { backgroundImage: `url(${user.user.userAvatar})` } : {}}>
+                {!user.user.userAvatar && user.user.username.charAt(0).toUpperCase()}
               </div>
               <div className="chat-item-info">
-                <span className="chat-item-name">{user.username.length > 20 ? user.username.slice(0, 20) + "..." : user.username}</span>
-                <span style={{color: unseenUsers.includes(user._id) ? "#00FF00" : "rgba(255, 255, 255, 0.6)"}} className="chat-item-last-msg">
-                  {lastMessages.find(msg => msg._id === user._id)?.lastMessage?.type === "post" 
+                <span className="chat-item-name">{user.user.username.length > 20 ? user.user.username.slice(0, 20) + "..." : user.user.username}</span>
+                <span style={{color: unseenUsers.includes(user.user._id) ? "#00FF00" : "rgba(255, 255, 255, 0.6)"}} className="chat-item-last-msg">
+                  {user.lastMessage?.type === "post" 
                     ? "Shared a post" 
-                    : lastMessages.find(msg => msg._id === user._id)?.lastMessage?.text.length > 20 ? lastMessages.find(msg => msg._id === user._id)?.lastMessage?.text.slice(0, 20) + "..." : lastMessages.find(msg => msg._id === user._id)?.lastMessage?.text}
+                    : user.lastMessage?.text.length > 20 ? user.lastMessage?.text.slice(0, 20) + "..." : user.lastMessage?.text}
                 </span>
               </div>
-              {unseenUsers.includes(user._id) && (
+              {unseenUsers.includes(user.user._id) && (
                 <span className="unseen-indicator"></span>
               )}
             </div>
@@ -301,8 +293,8 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
         {activeChat ? (
           <>
             <div className="chat-window-header">
-              <h3>{activeChat.username}</h3>
-              {onlineUsers.includes(activeChat._id) && (
+              <h3>{activeChat.user.username}</h3>
+              {onlineUsers.includes(activeChat.user._id) && (
                 <span className="online-dot"></span>
               )}
             </div>
@@ -353,7 +345,7 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
                     </React.Fragment>
                   );
                 })}
-                {typingData.senderId === activeChat._id && typingData.isTyping && (
+                {typingData.senderId === activeChat.user._id && typingData.isTyping && (
                         <div className="message-wrapper received">
                           <div className="message-bubble">
                             Typing ...
