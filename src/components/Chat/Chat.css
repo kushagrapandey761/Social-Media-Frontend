@@ -399,6 +399,11 @@
 }
 
 @media (max-width: 768px) {
+  .chat-container {
+    height: calc(95vh - 84px);
+    margin-top: 0;
+  }
+
   .chat-sidebar {
     width: 100%;
   }
