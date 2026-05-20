@@ -284,7 +284,7 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
 
   return (
     <div className="chat-container">
-      <div className="chat-sidebar">
+      <div className={`chat-sidebar ${activeChat ? 'mobile-hidden' : ''}`}>
         <div className="chat-sidebar-header">
           <h2>Messages</h2>
         </div>
@@ -328,10 +328,15 @@ const Chat = ({onlineUsers, typingData, messageSeenData}) => {
         </div>
       </div>
 
-      <div className="chat-window">
+      <div className={`chat-window ${!activeChat ? 'mobile-hidden' : ''}`}>
         {activeChat ? (
           <>
             <div className="chat-window-header">
+              <button className="mobile-back-btn" onClick={() => setActiveChat(null)}>
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                  <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/>
+                </svg>
+              </button>
               <h3>{activeChat.user.username}</h3>
               {onlineUsers.includes(activeChat.user._id) && (
                 <span className="online-dot"></span>

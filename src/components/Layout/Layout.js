@@ -18,7 +18,7 @@ const Layout = ({ children }) => {
       
       
       {/* Main Content Area */}
-      <main style={{paddingTop: isLoggedIn ? "calc(80px + var(--space-xl))" : "var(--space-xl)"}} className="main-content">
+      <main style={{paddingTop: isLoggedIn ? window.innerWidth > 768 ? "calc(80px + var(--space-xl))" : "80px" : "var(--space-xl)"}} className="main-content">
         {children}
       </main>
     </div>
