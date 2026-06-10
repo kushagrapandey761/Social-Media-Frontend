@@ -11,10 +11,13 @@ const Feed = () => {
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef();
   const pageRef = useRef(1);
+  const isFetchingRef = useRef(false);
+  const hasMoreRef = useRef(true);
 
   const fetchPosts = useCallback(async () => {
-    if (loading || !hasMore) return;
+    if (isFetchingRef.current || !hasMoreRef.current) return;
 
+    isFetchingRef.current = true;
     setLoading(true);
 
     try {
@@ -22,6 +25,7 @@ const Feed = () => {
 
       setPosts((prev) => [...prev, ...data.posts]);
       setHasMore(data.hasMore);
+      hasMoreRef.current = data.hasMore;
 
       if (data.hasMore) {
         pageRef.current += 1;
@@ -30,19 +34,20 @@ const Feed = () => {
       console.error(error);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [loading, hasMore]);
+  }, []);
 
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
 
   useEffect(() => {
-    if (loading || !observerRef.current) return;
+    if (!observerRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && !loading) {
+        if (entries[0]?.isIntersecting && hasMoreRef.current) {
           fetchPosts();
         }
       },
@@ -57,7 +62,7 @@ const Feed = () => {
     return () => {
       observer.disconnect();
     };
-  }, [hasMore, loading, fetchPosts]);
+  }, [fetchPosts]);
 
   const handleCreatePost = ({ content, files }) => {
     setPostCreatingLoader(true);
