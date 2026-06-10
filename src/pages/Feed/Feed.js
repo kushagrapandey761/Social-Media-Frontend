@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import PostForm from "../../components/PostForm/PostForm";
 import PostCard from "../../components/PostCard/PostCard";
 import "./Feed.css";
@@ -6,20 +6,58 @@ import { api } from "../../services/api";
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [postCreatingLoader, setPostCreatingLoader] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const observerRef = useRef();
+  const pageRef = useRef(1);
+
+  const fetchPosts = useCallback(async () => {
+    if (loading || !hasMore) return;
+
+    setLoading(true);
+
+    try {
+      const data = await api.getFeed(pageRef.current);
+
+      setPosts((prev) => [...prev, ...data.posts]);
+      setHasMore(data.hasMore);
+
+      if (data.hasMore) {
+        pageRef.current += 1;
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, hasMore]);
 
   useEffect(() => {
-    // Simulate API fetch
-    const fetchPosts = async () => {
-      const response = await api.getFeed();
-      // Reverse posts to show newest first (assuming API returns oldest first)
-      response.reverse();
-      setPosts(response);
-      setLoading(false);
-    };
     fetchPosts();
   }, []);
+
+  useEffect(() => {
+    if (loading || !observerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !loading) {
+          fetchPosts();
+        }
+      },
+      {
+        rootMargin: "0px 0px 200px 0px",
+        threshold: 0.1,
+      },
+    );
+
+    observer.observe(observerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, loading, fetchPosts]);
 
   const handleCreatePost = ({ content, files }) => {
     setPostCreatingLoader(true);
@@ -48,22 +86,35 @@ const Feed = () => {
               <p>Creating your post...</p>
             </div>
           )}
-          {loading ? (
+
+          <div className="posts-list">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                mediaIndex={0}
+                post={post}
+                isUsersPost={false}
+                isChat={false}
+              />
+            ))}
+            <div ref={observerRef} style={{ height: "20px" }} />
+          </div>
+
+          {loading && posts.length === 0 && (
             <div className="feed-loading">
               <div className="spinner"></div>
               <p>Loading your feed...</p>
             </div>
-          ) : (
-            <div className="posts-list">
-              {posts.map((post) => (
-                <PostCard key={post.id} mediaIndex={0} post={post} isUsersPost={false} isChat={false} />
-              ))}
+          )}
+
+          {loading && posts.length > 0 && (
+            <div className="feed-loading">
+              <div className="spinner"></div>
+              <p>Loading more posts...</p>
             </div>
           )}
         </div>
       </div>
-      
-      
     </div>
   );
 };

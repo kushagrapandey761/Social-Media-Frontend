@@ -36,11 +36,14 @@ export const api = {
   },
   
   // Posts
-  getFeed: async () => {
-    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/posts`,{
-      method: "GET",
-      credentials: "include"
-    });
+  getFeed: async (page) => {
+    const res = await fetch(
+      `${process.env.REACT_APP_BASE_URL}/posts?page=${page}&limit=5`,
+      {
+        method: "GET",
+        credentials: "include",
+      },
+    );
     if (!res.ok) {
       throw new Error('Failed to fetch feed');
     }
