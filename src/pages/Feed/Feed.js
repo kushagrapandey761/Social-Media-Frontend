@@ -8,7 +8,6 @@ const Feed = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [postCreatingLoader, setPostCreatingLoader] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef();
   const pageRef = useRef(1);
   const isFetchingRef = useRef(false);
@@ -24,7 +23,6 @@ const Feed = () => {
       const data = await api.getFeed(pageRef.current);
 
       setPosts((prev) => [...prev, ...data.posts]);
-      setHasMore(data.hasMore);
       hasMoreRef.current = data.hasMore;
 
       if (data.hasMore) {
